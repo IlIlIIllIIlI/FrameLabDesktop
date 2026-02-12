@@ -1,16 +1,20 @@
 package com.frameLab.frameSprite.model;
 
-import java.util.ArrayList;
+import java.util.List;
 
 public class User {
     protected int id;
     protected String firstName;
     protected String lastName;
     protected String email;
-    protected ArrayList<Project> Projects;
+    protected List<Project> Projects;
 
-    User(){
+    public User(){
 
+    }
+
+    public List<Project> getProjects() {
+        return Projects;
     }
 
     public void setEmail(String email) {
@@ -19,6 +23,14 @@ public class User {
 
     public void setId(int id) {
         this.id = id;
+    }
+
+    public int getId() {
+        return id;
+    }
+
+    public void setProjects(List<Project> projects) {
+        Projects = projects;
     }
 
     public void setFirst_name(String firstName) {

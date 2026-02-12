@@ -1,10 +1,16 @@
 package com.frameLab.frameSprite.model;
 
+import com.frameLab.frameSprite.Sprites.SpriteLayer;
+
+import java.util.List;
+
 public class Project {
     int id;
     String title;
     String imageUrl;
-
+    int width;
+    int height;
+    List<SpriteLayer> layers;
     public Project(int id, String title, String imageUrl){
 
         this.id = id;

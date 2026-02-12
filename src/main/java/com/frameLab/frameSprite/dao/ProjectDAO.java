@@ -20,8 +20,8 @@ public class ProjectDAO {
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 title TEXT NOT NULL UNIQUE,
                 user_id INTEGER NOT NULL,
-                challenge_id INTEGER NOT NULL
-                image_url TEXT NOT NULL
+                challenge_id INTEGER NOT NULL,
+                project_uri TEXT NOT NULL,
             )
         """;
 
@@ -34,7 +34,7 @@ public class ProjectDAO {
 
 
     public void save(Project project) {
-        String sql = "INSERT INTO decks (title, image_url) VALUES (?, ?)";
+        String sql = "INSERT INTO projects (title, project_uri) VALUES (?, ?)";
 
         try (PreparedStatement pstmt = this.connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             pstmt.setString(1, project.getTitle());
@@ -47,20 +47,20 @@ public class ProjectDAO {
                 }
             }
         } catch (SQLException e) {
-            throw new RuntimeException("Failed to save deck: " + e.getMessage(), e);
+            throw new RuntimeException("Failed to save projects: " + e.getMessage(), e);
         }
     }
 
     public List<Project> getProjectsByChallengeAndUser(int userId, int challengeId){
         ArrayList<Project> projects = new ArrayList<>();
-        String sql = "SELECT title,image_url FROM projects WHERE user_id = ? AND challenge_id = ?";
+        String sql = "SELECT title,project_uri FROM projects WHERE user_id = ? AND challenge_id = ?";
         try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
             pstmt.setInt(1, userId);
             pstmt.setInt(2,challengeId);
             ResultSet rs = pstmt.executeQuery();
             while (rs.next()) {
                 projects.add(
-                        new Project(rs.getInt("id"),rs.getString("title"),rs.getString("image_url"))
+                        new Project(rs.getInt("id"),rs.getString("title"),rs.getString("project_uri"))
                 );
             }
         } catch (SQLException e) {

@@ -11,6 +11,8 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.input.MouseEvent;
+import javafx.scene.layout.VBox;
 
 import javax.security.auth.login.LoginException;
 import java.io.IOException;
@@ -85,11 +87,15 @@ public class MainPageController {
     }
 
 
-    public void handleProjects(ActionEvent actionEvent) {
+    public void handleProjects() {
         try {
             Main.changeScene("/view/projects-view.fxml");
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public void test(MouseEvent mouseEvent) {
+        System.out.println("yey");
     }
 }

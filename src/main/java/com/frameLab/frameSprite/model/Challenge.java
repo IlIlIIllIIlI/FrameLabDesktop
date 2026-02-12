@@ -14,6 +14,10 @@ public class Challenge {
         this.description = description;
     }
 
+    public int getId() {
+        return id;
+    }
+
     public void setTheme_title(String title) {
         this.title = title;
     }

@@ -3,6 +3,7 @@ package com.frameLab.frameSprite.utils;
 import com.frameLab.frameSprite.model.Challenge;
 import com.frameLab.frameSprite.model.User;
 
+import java.io.IOException;
 import java.util.Map;
 
 public class JsonUtils {
@@ -11,7 +12,15 @@ public class JsonUtils {
         String message;
         boolean success;
         Challenge challenge;
+        static SessionUtils cache;
 
+        static {
+            try {
+                cache = SessionUtils.getInstance();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
         public void setMessage(String message) {
             this.message = message;
         }
@@ -25,6 +34,7 @@ public class JsonUtils {
         }
 
         public User getUser() {
+            cache.setUser(user);
             return user;
         }
 
@@ -41,6 +51,7 @@ public class JsonUtils {
         }
 
         public Challenge getChallenge() {
+            cache.setChallenge(challenge);
             return challenge;
         }
     }
@@ -55,6 +66,4 @@ public class JsonUtils {
         jsonBuilder.append("}");
         return jsonBuilder.toString();
     }
-
-
 }
