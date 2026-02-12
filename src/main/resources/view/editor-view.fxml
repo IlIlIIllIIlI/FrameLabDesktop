@@ -13,9 +13,26 @@
             prefHeight="400.0" prefWidth="600.0" >
     <VBox spacing="40.0">
         <HBox>
+            <Button onAction="#handleSave">Save</Button>
             <Button onAction="#handleExport">Export</Button>
+            <Button onAction="#handleUndo">Undo</Button>
+            <Button onAction="#handleRedo">Redo</Button>
         </HBox>
-        <ImageView fx:id="projectImage" fitHeight="600" fitWidth="600" pickOnBounds="true" preserveRatio="true">
-        </ImageView>
+        <StackPane fx:id="canvasContainer" prefHeight="500.0" prefWidth="500.0">
+        </StackPane>
+
+
+        <VBox spacing="5.0">
+            <Label>Layers</Label>
+
+            <ListView fx:id="layerListView" VBox.vgrow="ALWAYS" prefWidth="200.0"/>
+
+            <HBox spacing="5.0">
+                <Button onAction="#handleAddLayer">+</Button>
+                <Button onAction="#handleDeleteLayer">-</Button>
+                <Button onAction="#handleLayerUp">▲</Button>
+                <Button onAction="#handleLayerDown">▼</Button>
+            </HBox>
+        </VBox>
     </VBox>
 </AnchorPane>

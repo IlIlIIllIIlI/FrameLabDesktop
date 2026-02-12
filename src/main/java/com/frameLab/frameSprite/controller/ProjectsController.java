@@ -5,11 +5,15 @@ import com.frameLab.frameSprite.service.ProjectsService;
 import com.frameLab.frameSprite.utils.SessionUtils;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
 import javafx.scene.control.Label;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
+import javafx.stage.Stage;
 
 import java.io.File;
 import java.io.IOException;
@@ -39,12 +43,21 @@ public class ProjectsController {
                 HBox projectBox = new HBox();
                 projectBox.setSpacing(20.0);
                 projectBox.setOnMouseClicked(e -> {
-                    handleLoad();
+                    try {
+                        handleLoad(project);
+                    } catch (IOException ex) {
+                        throw new RuntimeException(ex);
+                    }
                 });
+
                 ImageView projectView = new ImageView();
-                File file = new File(Objects.requireNonNull(getClass().getResource(project.getImageUrl())).toString());
-                Image image = new Image(file.toURI().toString());
-                projectView.setImage(image);
+                try {
+                    File file = new File(Objects.requireNonNull(getClass().getResource(project.getImageUrl())).toString());
+                    Image image = new Image(file.toURI().toString());
+                    projectView.setImage(image);
+                } catch (Exception e) {
+                    System.out.println("AAAA");
+                }
                 Label label = new Label(project.getTitle());
 
                 projectBox.getChildren().addAll(label,projectView);
@@ -57,7 +70,17 @@ public class ProjectsController {
 
     }
 
-    private void handleLoad(){
+    private void handleLoad(Project project) throws IOException {
+        FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/editor-view.fxml"));
+        Parent root = loader.load();
 
+        EditorController editorController = loader.getController();
+
+        editorController.initData(project);
+
+        Stage stage = (Stage) projectsBox.getScene().getWindow();
+
+        Scene scene = new Scene(root);
+        stage.setScene(scene);
     }
 }

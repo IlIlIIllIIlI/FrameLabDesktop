@@ -25,5 +25,12 @@ public class SpriteLayer implements Serializable {
         this.storageFileName = "layer_" + this.name + ".png";
     }
 
+    @Override
+    public String toString() {
+        return this.name;
+    }
 
+    public void setImage(WritableImage image) {
+        this.image = image;
+    }
 }

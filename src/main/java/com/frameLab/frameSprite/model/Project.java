@@ -28,4 +28,28 @@ public class Project {
     public void setId(int id) {
         this.id = id;
     }
+
+    public List<SpriteLayer> getLayers() {
+        return layers;
+    }
+
+    public int getHeight() {
+        return height;
+    }
+
+    public int getWidth() {
+        return width;
+    }
+
+    public void setHeight(int height) {
+        this.height = height;
+    }
+
+    public void setWidth(int width) {
+        this.width = width;
+    }
+
+    public void setLayers(List<SpriteLayer> layers) {
+        this.layers = layers;
+    }
 }

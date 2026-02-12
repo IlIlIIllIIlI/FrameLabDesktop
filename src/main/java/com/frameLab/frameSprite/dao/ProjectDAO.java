@@ -21,14 +21,14 @@ public class ProjectDAO {
                 title TEXT NOT NULL UNIQUE,
                 user_id INTEGER NOT NULL,
                 challenge_id INTEGER NOT NULL,
-                project_uri TEXT NOT NULL,
+                project_uri TEXT NOT NULL
             )
         """;
 
         try (PreparedStatement pstmt = this.connection.prepareStatement(sql)) {
             pstmt.execute();
         } catch (SQLException e) {
-            throw new RuntimeException("Failed to create decks table: " + e.getMessage(), e);
+            throw new RuntimeException("Failed to create projects table: " + e.getMessage(), e);
         }
     }
 
