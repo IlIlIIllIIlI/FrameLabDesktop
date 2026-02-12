@@ -21,9 +21,9 @@
         </VBox>
         <VBox>
             <Label fx:id="currentChallengeLabel"> No challenges for now</Label>
-            <ImageView fx:id="currentChallengeImage" pickOnBounds="true" preserveRatio="true">
+            <ImageView fx:id="currentChallengeImage" fitHeight="400" fitWidth="400" pickOnBounds="true" preserveRatio="true">
             </ImageView>
-
+            <Button fx:id="projectsButton" onAction="#handleProjects">Try the challenge !</Button>
         </VBox>
     </HBox>
 </AnchorPane>

@@ -70,3 +70,7 @@ replay_pid*
 *.db
 
 config.properties
+
+cookies.*
+
+keyset.json

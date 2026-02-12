@@ -3,6 +3,8 @@ package com.frameLab.frameSprite.dao;
 import com.frameLab.frameSprite.model.Project;
 
 import java.sql.*;
+import java.util.ArrayList;
+import java.util.List;
 
 public class ProjectDAO {
     private final Connection connection;
@@ -17,6 +19,8 @@ public class ProjectDAO {
             CREATE TABLE IF NOT EXISTS projects (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 title TEXT NOT NULL UNIQUE,
+                user_id INTEGER NOT NULL,
+                challenge_id INTEGER NOT NULL
                 image_url TEXT NOT NULL
             )
         """;
@@ -45,6 +49,24 @@ public class ProjectDAO {
         } catch (SQLException e) {
             throw new RuntimeException("Failed to save deck: " + e.getMessage(), e);
         }
+    }
+
+    public List<Project> getProjectsByChallengeAndUser(int userId, int challengeId){
+        ArrayList<Project> projects = new ArrayList<>();
+        String sql = "SELECT title,image_url FROM projects WHERE user_id = ? AND challenge_id = ?";
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            pstmt.setInt(1, userId);
+            pstmt.setInt(2,challengeId);
+            ResultSet rs = pstmt.executeQuery();
+            while (rs.next()) {
+                projects.add(
+                        new Project(rs.getInt("id"),rs.getString("title"),rs.getString("image_url"))
+                );
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Find All failed", e);
+        }
+        return projects;
     }
 
 }

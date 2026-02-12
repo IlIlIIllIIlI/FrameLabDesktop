@@ -21,11 +21,8 @@ public class LoginController {
     private TextField passwordField;
     @FXML
     private TextField emailField;
-    private ApiUtils au;
 
     public void initialize() throws IOException {
-        au = new ApiUtils();
-
     }
 
     @FXML
@@ -33,7 +30,7 @@ public class LoginController {
         Task<Boolean> task = new Task<>() {
             @Override
             protected Boolean call() throws Exception {
-               return au.login(emailField.getText(),passwordField.getText());
+               return ApiUtils.login(emailField.getText(),passwordField.getText());
             }
 
         };

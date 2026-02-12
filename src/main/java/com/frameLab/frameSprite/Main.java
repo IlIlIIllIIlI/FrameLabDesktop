@@ -3,6 +3,7 @@ package com.frameLab.frameSprite;
 import com.frameLab.frameSprite.controller.LoginController;
 import com.frameLab.frameSprite.controller.MainPageController;
 import com.frameLab.frameSprite.utils.ApiUtils;
+import com.frameLab.frameSprite.utils.cookies.CookieUtils;
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;

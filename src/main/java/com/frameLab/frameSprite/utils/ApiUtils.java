@@ -2,6 +2,7 @@ package com.frameLab.frameSprite.utils;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.frameLab.frameSprite.utils.cookies.CookieUtils;
 
 import javax.security.auth.login.LoginException;
 import java.io.FileInputStream;
@@ -20,9 +21,9 @@ import static com.frameLab.frameSprite.utils.JsonUtils.mapToJson;
 import static java.net.CookiePolicy.ACCEPT_ALL;
 
 public class ApiUtils {
-    HttpClient client;
-    CookieUtils cu;
-    String apiUrl;
+    static HttpClient client;
+    static CookieUtils cu;
+    static String apiUrl;
     ObjectMapper objectMapper;
     public ApiUtils() throws IOException {
          cu = CookieUtils.getInstance();
@@ -85,7 +86,7 @@ public class ApiUtils {
         }
     }
 
-    public boolean login(String email, String password) throws LoginException {
+    public static boolean  login(String email, String password) throws LoginException {
         Map<String,String> data = new HashMap<>();
         data.put("email",email);
         data.put("password",password);
@@ -99,8 +100,7 @@ public class ApiUtils {
                     .build();
 
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-
-            if (response.statusCode() == 200) {
+                if (response.statusCode() == 200) {
                 return true;
             }
 
