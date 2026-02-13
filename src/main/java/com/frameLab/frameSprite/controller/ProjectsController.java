@@ -43,11 +43,11 @@ public class ProjectsController {
             projectsBox.getChildren().add(label);
         } else {
             for(Project project : projects){
-                projectsService.loadProject(project);
                 HBox projectBox = new HBox();
                 projectBox.setSpacing(20.0);
                 projectBox.setOnMouseClicked(e -> {
                     try {
+                        projectsService.loadProject(project);
                         handleLoad(project);
                     } catch (IOException ex) {
                         throw new RuntimeException(ex);
@@ -64,6 +64,9 @@ public class ProjectsController {
                 Label label = new Label(project.getTitle());
 
                 projectBox.getChildren().addAll(label,projectView);
+
+
+                projectsBox.getChildren().add(projectBox);
             }
         }
     }

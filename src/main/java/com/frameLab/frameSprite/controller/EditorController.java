@@ -12,6 +12,7 @@ import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.Node;
+import javafx.scene.SnapshotParameters;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.ListView;
@@ -98,6 +99,23 @@ public class EditorController {
 
     @FXML
     private void handleSave(ActionEvent actionEvent) throws IOException {
+        for (Node node: canvasContainer.getChildren()){
+            if (node instanceof Canvas){
+                Canvas canvas = (Canvas) node;
+
+                for (SpriteLayer layer : layerListModel){
+                    if (layer.getName().equals(canvas.getId())){
+                        SnapshotParameters params = new SnapshotParameters();
+                        params.setFill(Color.TRANSPARENT);
+                        WritableImage newImage = canvas.snapshot(params, null);
+
+                        layer.setImage(newImage);
+                    }
+                }
+            }
+
+
+        }
         projectsService.saveProject(currentProject);
     }
 

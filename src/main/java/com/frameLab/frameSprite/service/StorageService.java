@@ -72,7 +72,7 @@ public class StorageService {
         for (SpriteLayerDTO dto : toFormat){
             SpriteLayer layer = dto.toLayer();
 
-            File fileImage = new File(path+layer.getImageFileName());
+            File fileImage = new File(path.toFile(),layer.getImageFileName());
 
             if (fileImage.exists()) {
                 Image image = new Image(fileImage.toURI().toString());
@@ -91,7 +91,8 @@ public class StorageService {
     }
 
     public String getPreviewPath(int projectId) {
-        return BASE_PATH + projectId + "/preview.png";
+        File file = new File(BASE_PATH + projectId + "/preview.png");
+        return file.toURI().toString();
     }
 
     private void generateThumbnail(Project project,File folder) throws IOException {
