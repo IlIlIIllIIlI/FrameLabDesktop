@@ -1,5 +1,8 @@
 package com.frameLab.frameSprite.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 import java.util.List;
 
 public class User {
@@ -7,14 +10,15 @@ public class User {
     protected String firstName;
     protected String lastName;
     protected String email;
-    protected List<Project> Projects;
+    @JsonIgnore
+    protected List<Project> projects;
 
     public User(){
 
     }
 
     public List<Project> getProjects() {
-        return Projects;
+        return projects;
     }
 
     public void setEmail(String email) {
@@ -30,7 +34,7 @@ public class User {
     }
 
     public void setProjects(List<Project> projects) {
-        Projects = projects;
+        this.projects = projects;
     }
 
     public void setFirst_name(String firstName) {

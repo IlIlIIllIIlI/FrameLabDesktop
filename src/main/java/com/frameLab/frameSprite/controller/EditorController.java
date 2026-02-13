@@ -5,6 +5,7 @@ import com.frameLab.frameSprite.effect.Paint;
 import com.frameLab.frameSprite.model.Challenge;
 import com.frameLab.frameSprite.model.Project;
 import com.frameLab.frameSprite.service.HistoryService;
+import com.frameLab.frameSprite.service.ProjectsService;
 import com.frameLab.frameSprite.utils.SessionUtils;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -15,12 +16,11 @@ import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.ListView;
 import javafx.scene.image.Image;
-import javafx.scene.image.ImageView;
 import javafx.scene.image.WritableImage;
 import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
 
-import java.awt.*;
+import java.io.IOException;
 import java.util.ArrayList;
 
 public class EditorController {
@@ -36,9 +36,10 @@ public class EditorController {
 
     private ObservableList<SpriteLayer> layerListModel;
 
-
+    private ProjectsService projectsService;
     public void initialize(){
         this.historyService = new HistoryService();
+        this.projectsService = new ProjectsService();
     }
 
     public void initData(Project project){
@@ -66,7 +67,7 @@ public class EditorController {
 
         layerListView.getSelectionModel().selectFirst();
 
-        Drawing();
+        drawing();
     }
 
     private void loadChallengeBackground() {
@@ -83,7 +84,7 @@ public class EditorController {
             this.currentProject.setWidth(width);
             this.currentProject.setHeight(height);
 
-            SpriteLayer bgLayer = new SpriteLayer("Challenge Background", width, height);
+            SpriteLayer bgLayer = new SpriteLayer("Challenge_Background", width, height);
 
             bgLayer.setImage(new WritableImage(image.getPixelReader(),width,height));
 
@@ -96,7 +97,8 @@ public class EditorController {
     }
 
     @FXML
-    private void handleSaving(ActionEvent actionEvent) {
+    private void handleSave(ActionEvent actionEvent) throws IOException {
+        projectsService.saveProject(currentProject);
     }
 
     @FXML
@@ -109,14 +111,17 @@ public class EditorController {
         for(Node node : canvasContainer.getChildren()){
             if (node instanceof Canvas && node.getId().equals(layer.name)) {
                 this.currentCanvas = (Canvas) node;
+                drawing();
             }
         }
     }
+
+
     private void loadImage(){
         canvasContainer.getChildren().clear();
 
         for (SpriteLayer layer : currentProject.getLayers()){
-            Canvas canvas = new Canvas(500,500);
+            Canvas canvas = new Canvas(800,600);
             canvas.setId(layer.name);
 
             if (layer.image != null) {
@@ -128,7 +133,7 @@ public class EditorController {
         }
     }
 
-    private void Drawing() {
+    private void drawing() {
         GraphicsContext gc = currentCanvas.getGraphicsContext2D();
         gc.setLineWidth(5.0);
         gc.setStroke(Color.BLACK);
@@ -154,10 +159,6 @@ public class EditorController {
         });
     }
 
-    @FXML
-    private void handleSave(ActionEvent actionEvent) {
-
-    }
 
     @FXML
     private void handleUndo(ActionEvent actionEvent) {
@@ -169,20 +170,22 @@ public class EditorController {
         historyService.redo();
     }
 
-    public void handleAddLayer(ActionEvent actionEvent) {
+    @FXML
+    private void handleAddLayer(ActionEvent actionEvent) {
         String newName = "Layer " + (layerListModel.size() + 1);
-        SpriteLayer newLayer = new SpriteLayer(newName, 500, 500);
+        SpriteLayer newLayer = new SpriteLayer(newName, 800, 600);
 
         layerListModel.add(newLayer);
 
-        Canvas newCanvas = new Canvas(500, 500);
+        Canvas newCanvas = new Canvas(800, 600);
         newCanvas.setId(newName);
         canvasContainer.getChildren().add(newCanvas);
 
         layerListView.getSelectionModel().select(newLayer);
     }
 
-    public void handleDeleteLayer(ActionEvent actionEvent) {
+    @FXML
+    private  void handleDeleteLayer(ActionEvent actionEvent) {
         SpriteLayer selected = layerListView.getSelectionModel().getSelectedItem();
         int selectedIndex = layerListView.getSelectionModel().getSelectedIndex();
         if (selectedIndex == 0) {
@@ -200,9 +203,11 @@ public class EditorController {
         }
     }
 
-    public void handleLayerUp(ActionEvent actionEvent) {
+    @FXML
+    private  void handleLayerUp(ActionEvent actionEvent) {
     }
 
-    public void handleLayerDown(ActionEvent actionEvent) {
+    @FXML
+    private  void handleLayerDown(ActionEvent actionEvent) {
     }
 }

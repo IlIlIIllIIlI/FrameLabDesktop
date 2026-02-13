@@ -3,7 +3,6 @@ package com.frameLab.frameSprite;
 import com.frameLab.frameSprite.controller.LoginController;
 import com.frameLab.frameSprite.controller.MainPageController;
 import com.frameLab.frameSprite.utils.ApiUtils;
-import com.frameLab.frameSprite.utils.cookies.CookieUtils;
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
@@ -13,17 +12,27 @@ import javafx.stage.Stage;
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.SQLException;
 import java.util.Objects;
 
 public class Main extends Application {
     private static Stage primaryStage;
+    public static  Connection conn;
+
+    static {
+        try {
+            conn = DriverManager.getConnection("jdbc:sqlite:frameSprite.db");
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     public static void main(String[] args) {
         launch(args);
     }
 
     @Override
     public void start(Stage primaryStage) throws Exception {
-        Connection conn = DriverManager.getConnection("jdbc:sqlite:frameSprite.db");
         ApiUtils au = new ApiUtils();
         Main.primaryStage = primaryStage;
         if (au.isLogged()){
@@ -50,5 +59,9 @@ public class Main extends Application {
 
         Scene scene = new Scene(root);
         primaryStage.setScene(scene);
+    }
+
+    public static Connection getConnection() {
+        return conn;
     }
 }

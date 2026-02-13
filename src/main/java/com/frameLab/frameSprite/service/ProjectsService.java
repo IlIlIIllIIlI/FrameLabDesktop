@@ -6,21 +6,25 @@ import com.frameLab.frameSprite.model.User;
 import com.frameLab.frameSprite.utils.SessionUtils;
 
 import java.io.IOException;
-import java.sql.DriverManager;
-import java.sql.SQLException;
 import java.util.List;
 
 public class ProjectsService {
     ProjectDAO dao;
+    StorageService storageService;
 
-    public ProjectsService() throws SQLException {
-        dao = new ProjectDAO(DriverManager.getConnection("jdbc:sqlite:frameSprite.db"));
+    public ProjectsService() {
+        dao = new ProjectDAO();
+        storageService = new StorageService();
     }
 
     public List<Project> getProjectsByUserAndChallenge(int userId, int challengeId) throws IOException {
         User userCache = SessionUtils.getInstance().getUser();
         if (userCache == null || userCache.getProjects() == null) {
             List<Project> projects = dao.getProjectsByChallengeAndUser(userId,challengeId);
+
+            for (Project project : projects){
+                project.setImageUrl(storageService.getPreviewPath(project.getId()));
+            }
             if (userCache != null) {
                 userCache.setProjects(projects);
             }
@@ -29,4 +33,20 @@ public class ProjectsService {
 
         return userCache.getProjects();
     }
+
+    public void loadProject(Project project) throws IOException {
+        storageService.loadFiles(project);
+    }
+
+    public void saveProject(Project project) throws IOException {
+        if (project.getId() == 0) {
+            project.setUserId(SessionUtils.getInstance().getUser().getId());
+            project.setChallengeId(SessionUtils.getInstance().getChallenge().getId());
+        }
+
+        dao.save(project);
+
+        storageService.saveFiles(project);
+    }
+
 }

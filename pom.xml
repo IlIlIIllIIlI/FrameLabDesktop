@@ -67,6 +67,11 @@
             <scope>compile</scope>
         </dependency>
 
+        <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-swing</artifactId>
+            <version>21.0.2</version>
+        </dependency>
 
     </dependencies>
 

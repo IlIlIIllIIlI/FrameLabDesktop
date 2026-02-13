@@ -25,8 +25,9 @@ public class Paint implements Command {
         this.y = y;
         this.width = width;
         this.height = height;
-
         this.graphicsContext = canvas.getGraphicsContext2D();
+
+        saveBackup();
     }
 
     private void saveBackup() {
