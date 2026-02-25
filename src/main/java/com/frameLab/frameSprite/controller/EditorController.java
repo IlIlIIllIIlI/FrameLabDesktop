@@ -11,20 +11,30 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
 import javafx.scene.SnapshotParameters;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
+import javafx.scene.control.ColorPicker;
+import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
+import javafx.scene.control.Slider;
 import javafx.scene.image.Image;
 import javafx.scene.image.WritableImage;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Objects;
 
 public class EditorController {
+    @FXML
+    private Slider widthSlider;
+    @FXML
+    private ColorPicker colorPicker;
     @FXML
     private ListView<SpriteLayer> layerListView;
     @FXML
@@ -57,7 +67,39 @@ public class EditorController {
         this.layerListModel = FXCollections.observableList(project.getLayers());
 
         layerListView.setItems(layerListModel);
+        layerListView.setCellFactory(c ->new ListCell<SpriteLayer>() {
 
+
+            private HBox root;
+            private LayerController layerController;
+
+            {
+                try {
+                    FXMLLoader loader = new javafx.fxml.FXMLLoader(getClass().getResource("/view/layer-item.fxml"));
+                    root = loader.load();
+                    layerController = loader.getController();
+                    // On passe une référence de l'EditorController au petit contrôleur
+                    layerController.setMainController(EditorController.this);
+                } catch (java.io.IOException e) {
+                    throw new RuntimeException();
+                }
+
+            }
+
+            @Override
+            protected void updateItem(SpriteLayer spriteLayer, boolean empty) {
+                super.updateItem(spriteLayer,empty);
+
+                if (empty || spriteLayer == null) {
+                    setGraphic(null);
+                } else {
+                    // On envoie les données au contrôleur FXML
+                    layerController.setLayer(spriteLayer);
+                    // On affiche le FXML chargé
+                    setGraphic(root);
+                }
+            }
+        });
         layerListView.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {
             if (newVal != null) {
                 setActiveLayer(newVal);
@@ -66,6 +108,8 @@ public class EditorController {
 
         loadImage();
 
+        colorPicker.setValue(Color.BLACK);
+        widthSlider.setValue(5.0);
         layerListView.getSelectionModel().selectFirst();
 
         drawing();
@@ -141,7 +185,8 @@ public class EditorController {
         for (SpriteLayer layer : currentProject.getLayers()){
             Canvas canvas = new Canvas(800,600);
             canvas.setId(layer.name);
-
+            canvas.setOpacity(layer.getOpacity());
+            canvas.setVisible(layer.isVisible());
             if (layer.image != null) {
                 canvas.getGraphicsContext2D().drawImage(layer.image, 0, 0);
             }
@@ -153,17 +198,18 @@ public class EditorController {
 
     private void drawing() {
         GraphicsContext gc = currentCanvas.getGraphicsContext2D();
-        gc.setLineWidth(5.0);
-        gc.setStroke(Color.BLACK);
-
         canvasContainer.setOnMousePressed(e -> {
             currentPaintCommand = new Paint(currentCanvas, 0,0,currentCanvas.getWidth(),currentCanvas.getHeight());
+            gc.setStroke(colorPicker.getValue());
+            gc.setLineWidth(widthSlider.getValue());
             gc.beginPath();
             gc.moveTo(e.getX(),e.getY());
             gc.stroke();
         });
 
         canvasContainer.setOnMouseDragged(e -> {
+            gc.setStroke(colorPicker.getValue());
+            gc.setLineWidth(widthSlider.getValue());
             gc.lineTo(e.getX(), e.getY());
             gc.stroke();
         });
@@ -227,5 +273,23 @@ public class EditorController {
 
     @FXML
     private  void handleLayerDown(ActionEvent actionEvent) {
+    }
+
+    public void updateLayerVisibility(String layerName, boolean isVisible) {
+        for (Node node : canvasContainer.getChildren()) {
+            if (node instanceof Canvas && layerName.equals(node.getId())) {
+                node.setVisible(isVisible);
+                return;
+            }
+        }
+    }
+
+    public void updateLayerOpacity(String layerName, double opacity) {
+        for (Node node : canvasContainer.getChildren()) {
+            if (node instanceof Canvas && layerName.equals(node.getId())) {
+                node.setOpacity(opacity);
+                return;
+            }
+        }
     }
 }

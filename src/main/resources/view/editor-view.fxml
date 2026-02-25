@@ -4,6 +4,7 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
+<?import javafx.scene.control.skin.ColorPalette.ColorPickerGrid?>
 <AnchorPane xmlns="http://javafx.com/javafx"
             xmlns:fx="http://javafx.com/fxml"
             fx:controller="com.frameLab.frameSprite.controller.EditorController"
@@ -14,6 +15,12 @@
             <Button onAction="#handleExport">Export</Button>
             <Button onAction="#handleUndo">Undo</Button>
             <Button onAction="#handleRedo">Redo</Button>
+
+            <Label>Color :</Label>
+            <ColorPicker fx:id="colorPicker"/>
+
+            <Label>Width : </Label>
+            <Slider fx:id="widthSlider" min="1" max="50"/>
         </HBox>
         <StackPane fx:id="canvasContainer" prefHeight="600.0" prefWidth="800.0">
         </StackPane>
