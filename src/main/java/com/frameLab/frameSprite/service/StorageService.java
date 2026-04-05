@@ -12,7 +12,6 @@ import javafx.scene.image.Image;
 import javafx.scene.image.WritableImage;
 
 import javax.imageio.ImageIO;
-import java.awt.*;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.paint.Color;
 import javafx.scene.transform.Scale;
@@ -22,6 +21,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 
 public class StorageService {
@@ -39,23 +39,36 @@ public class StorageService {
         }
 
         List<SpriteLayerDTO> toParse = new ArrayList<>();
+        HashSet<String> safeFiles = new HashSet<String>();
 
+        safeFiles.add("metadata.json");
+        safeFiles.add("preview.png");
         for (SpriteLayer layer : project.getLayers()){
             if (layer.getImage()!= null){
                 File file = new File(path.toFile(),layer.getImageFileName());
 
                 ImageIO.write(SwingFXUtils.fromFXImage(layer.getImage(), null), "png", file);
 
+                safeFiles.add(layer.getImageFileName());
             }
 
             toParse.add(new SpriteLayerDTO(layer));
         }
 
 
-        File jsonFile = new File(path+"/metadata.json");
+        File jsonFile = new File(path.toFile(),"metadata.json");
 
         mapper.writeValue(jsonFile,toParse);
         generateThumbnail(project,path.toFile());
+
+        File[] files = path.toFile().listFiles();
+        if (files != null) {
+            for (File file: files){
+                if(!safeFiles.contains(file.getName())){
+                    Files.delete(file.toPath());
+                }
+            }
+        }
     }
 
     public void loadFiles(Project project) throws IOException {
@@ -127,4 +140,5 @@ public class StorageService {
         File previewFile = new File(folder, "preview.png");
         ImageIO.write(SwingFXUtils.fromFXImage(thumbnail, null), "png", previewFile);
     }
+
 }

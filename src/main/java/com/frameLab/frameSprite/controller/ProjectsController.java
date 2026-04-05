@@ -100,7 +100,6 @@ public class ProjectsController {
     private void handleLoad(Project project) throws IOException {
         FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/editor-view.fxml"));
         Parent root = loader.load();
-
         EditorController editorController = loader.getController();
 
         editorController.initData(project);

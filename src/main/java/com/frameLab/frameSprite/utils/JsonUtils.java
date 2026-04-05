@@ -38,7 +38,7 @@ public class JsonUtils {
             return user;
         }
 
-        public Object getMainClass(){
+        public Object getMainClass() throws IOException {
             if (user != null) {
                 return getUser();
             }
@@ -50,7 +50,7 @@ public class JsonUtils {
             return message;
         }
 
-        public Challenge getChallenge() {
+        public Challenge getChallenge() throws IOException {
             cache.setChallenge(challenge);
             return challenge;
         }

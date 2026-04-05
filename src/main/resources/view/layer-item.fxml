@@ -6,11 +6,13 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
+<?import javafx.scene.image.ImageView?>
 <HBox xmlns="http://javafx.com/javafx"
-            xmlns:fx="http://javafx.com/fxml"
-            fx:controller="com.frameLab.frameSprite.controller.LayerController"
-            style="fx-padding: 5px;">
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="com.frameLab.frameSprite.controller.LayerController"
+      style="fx-padding: 5px;">
 
+        <ImageView fx:id="layerPreview" fitHeight="100" fitWidth="100" pickOnBounds="true" preserveRatio="true"/>
 
         <CheckBox fx:id="visibleToggle" onAction="#handleVisibility" selected="true"/>
 

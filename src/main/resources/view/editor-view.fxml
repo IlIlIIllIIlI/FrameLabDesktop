@@ -3,8 +3,6 @@
 
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
-
-<?import javafx.scene.control.skin.ColorPalette.ColorPickerGrid?>
 <AnchorPane xmlns="http://javafx.com/javafx"
             xmlns:fx="http://javafx.com/fxml"
             fx:controller="com.frameLab.frameSprite.controller.EditorController"
@@ -34,6 +32,7 @@
                 <Button onAction="#handleDeleteLayer">-</Button>
                 <Button onAction="#handleLayerUp">▲</Button>
                 <Button onAction="#handleLayerDown">▼</Button>
+                <Button onAction="#handleMerge">Merge</Button>
             </HBox>
 
             <ListView fx:id="layerListView" VBox.vgrow="ALWAYS"/>

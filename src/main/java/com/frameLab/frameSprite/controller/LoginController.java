@@ -1,7 +1,10 @@
 package com.frameLab.frameSprite.controller;
 
 import com.frameLab.frameSprite.Main;
+import com.frameLab.frameSprite.model.Challenge;
+import com.frameLab.frameSprite.model.User;
 import com.frameLab.frameSprite.utils.ApiUtils;
+import com.frameLab.frameSprite.utils.SessionUtils;
 import javafx.concurrent.Task;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -13,6 +16,7 @@ import javax.security.auth.login.LoginException;
 import java.io.IOException;
 
 public class LoginController {
+    public Button demoButton;
     @FXML
     private Label errorLabel;
     @FXML
@@ -49,5 +53,24 @@ public class LoginController {
 
         Thread thread = new Thread(task);
         thread.start();
+    }
+
+    public void handleDemo(ActionEvent actionEvent) throws IOException {
+        User demoUser = new User();
+        demoUser.setId(-1);
+        demoUser.setFirst_name("Guest");
+
+        Challenge demoChallenge = new Challenge();
+        demoChallenge.setId(-1);
+
+        SessionUtils.getInstance().setUser(demoUser);
+        SessionUtils.getInstance().setChallenge(demoChallenge);
+
+        try {
+            Main.changeScene("/view/projects-view.fxml");
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
     }
 }

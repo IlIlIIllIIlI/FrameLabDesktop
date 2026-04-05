@@ -3,6 +3,8 @@ package com.frameLab.frameSprite.Sprites;
 
 import javafx.scene.image.WritableImage;
 
+import java.util.UUID;
+
 
 public class SpriteLayer {
     public String name;
@@ -22,7 +24,10 @@ public class SpriteLayer {
         this.name = name;
 
         this.image = new WritableImage(width, height);
-        this.imageFileName = this.name + ".png";
+        String id =  UUID.randomUUID().toString().substring(0,4);
+        String safeName = this.name.replaceAll("[^a-zA-Z0-9.-]","_")+ id;
+        this.imageFileName = safeName + ".png";
+
     }
 
     @Override

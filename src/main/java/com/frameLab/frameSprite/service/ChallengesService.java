@@ -17,7 +17,7 @@ public class ChallengesService {
         SessionUtils cache = SessionUtils.getInstance();
         if (cache.getChallenge() == null) {
 
-            Object object = au.getObject("/challenge/current");
+            Object object = au.getObject("/challenges/current");
             if (!(object instanceof Challenge)){
                 return null;
             } else {

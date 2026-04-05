@@ -6,9 +6,15 @@ import javafx.fxml.FXML;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.Slider;
+import javafx.scene.control.TextInputDialog;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
+
+import java.util.Objects;
 
 public class LayerController {
 
+    public ImageView layerPreview;
     @FXML
     private CheckBox visibleToggle;
     @FXML
@@ -28,6 +34,9 @@ public class LayerController {
                 mainController.updateLayerOpacity(currentLayer.name, currentLayer.opacity);
             }
         });
+
+
+
     }
 
     @FXML
@@ -46,7 +55,33 @@ public class LayerController {
         this.currentLayer = layer;
 
         layerName.setText(layer.name);
+        layerName.setOnMouseClicked(mouseEvent -> {
+            if (mouseEvent.getClickCount() == 2){
+                TextInputDialog dialog = new TextInputDialog(currentLayer.getName());
+                dialog.setTitle("Rename Layer");
+                dialog.setHeaderText("Enter a new name for this layer");
+                dialog.setContentText("Name :");
+
+                dialog.showAndWait().ifPresent( newName ->{
+                    if (!Objects.equals(currentLayer.getName(), newName) &&!newName.isBlank()) {
+                            layerName.setText(newName);
+                            mainController.renameCanvasLayer(currentLayer.getName(),newName);
+                            currentLayer.setName(newName);
+                    }
+                });
+
+
+            }
+        });
+
         visibleToggle.setSelected(layer.isVisible);
         opacitySlider.setValue(layer.opacity);
+        try {
+            Image image = currentLayer.getImage();
+            layerPreview.setImage(image);
+        } catch (Exception e) {
+            System.out.println("aaa : "+e);
+        }
+
     }
 }

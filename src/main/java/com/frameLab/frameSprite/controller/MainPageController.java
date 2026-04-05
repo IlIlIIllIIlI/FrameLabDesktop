@@ -15,8 +15,10 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.VBox;
 
 import javax.security.auth.login.LoginException;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Objects;
+import java.util.Properties;
 
 public class MainPageController {
     @FXML
@@ -49,7 +51,10 @@ public class MainPageController {
             projectsButton.setVisible(false);
         } else {
             currentChallengeLabel.setText("Current Challenge : "+currentChallenge.getTitle());
-            Image image = new Image("http://localhost:8000/public/" + currentChallenge.getImageUrl());
+            Properties config = new Properties();
+            config.load(new FileInputStream("config.properties"));
+            String publicUrl = config.getProperty("publicUrl");
+            Image image = new Image(publicUrl +"/"+ currentChallenge.getImageUrl());
             currentChallengeImage.setImage(image);
         }
 
@@ -93,9 +98,5 @@ public class MainPageController {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-    }
-
-    public void test(MouseEvent mouseEvent) {
-        System.out.println("yey");
     }
 }
