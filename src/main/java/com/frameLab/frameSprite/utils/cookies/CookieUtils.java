@@ -30,7 +30,7 @@ public class CookieUtils extends CookieManager implements Serializable {
         cm = new CookieManager();
         cs = cm.getCookieStore();
         Properties config = new Properties();
-        config.load(new FileInputStream("config.properties"));
+        config.load(getClass().getResourceAsStream("/config.properties"));
         uri = config.getProperty("uri");
 
         loadCookies();

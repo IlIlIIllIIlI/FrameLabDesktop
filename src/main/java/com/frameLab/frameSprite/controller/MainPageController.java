@@ -52,7 +52,7 @@ public class MainPageController {
         } else {
             currentChallengeLabel.setText("Current Challenge : "+currentChallenge.getTitle());
             Properties config = new Properties();
-            config.load(new FileInputStream("config.properties"));
+            config.load(getClass().getResourceAsStream("/config.properties"));
             String publicUrl = config.getProperty("publicUrl");
             Image image = new Image(publicUrl +"/"+ currentChallenge.getImageUrl());
             currentChallengeImage.setImage(image);

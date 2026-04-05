@@ -69,7 +69,7 @@ replay_pid*
 
 *.db
 
-config.properties
+src/main/resources/config.properties
 
 cookies.*
 

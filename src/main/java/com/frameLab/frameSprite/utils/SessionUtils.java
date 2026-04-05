@@ -46,7 +46,7 @@ public class SessionUtils {
         } else {
 
             Properties config = new Properties();
-            config.load(new FileInputStream("config.properties"));
+            config.load(getClass().getResourceAsStream("/config.properties"));
             String publicUrl = config.getProperty("publicUrl");
             String imageUrl = publicUrl + "/" + challenge.getImageUrl();
             this.setChallengeImage(new Image(imageUrl));

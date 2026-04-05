@@ -31,7 +31,7 @@ public class ApiUtils {
         objectMapper = new ObjectMapper();
 
         Properties config = new Properties();
-        config.load(new FileInputStream("config.properties"));
+        config.load(getClass().getResourceAsStream("/config.properties"));
         apiUrl = config.getProperty("apiUrl");
         client = HttpClient.newBuilder()
                 .connectTimeout(Duration.ofSeconds(10))
