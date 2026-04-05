@@ -7,6 +7,7 @@ import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.control.Alert;
 import javafx.stage.Stage;
 
 import java.io.IOException;
@@ -33,21 +34,36 @@ public class Main extends Application {
 
     @Override
     public void start(Stage primaryStage) throws Exception {
-        ApiUtils au = new ApiUtils();
-        Main.primaryStage = primaryStage;
-        if (au.isLogged()){
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/main-page-view.fxml"));
-            Parent root = loader.load();
-            MainPageController controller = loader.getController();
-            Scene scene = new Scene(root);
-            primaryStage.setScene(scene);
-        } else {
+        try {
+            ApiUtils au = new ApiUtils();
+            if (au.isLogged()){
+                FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/main-page-view.fxml"));
+                Parent root = loader.load();
+                MainPageController controller = loader.getController();
+                Scene scene = new Scene(root);
+                primaryStage.setScene(scene);
+            } else {
+                FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/login-view.fxml"));
+                Parent root = loader.load();
+                LoginController controller = loader.getController();
+                Scene scene = new Scene(root);
+                primaryStage.setScene(scene);
+            }
+        }catch (Exception e){
+            Alert error = new Alert(Alert.AlertType.ERROR);
+            error.setTitle("ERROR");
+            error.setHeaderText("API NOT FOUND");
+            error.setContentText("Most of the app wont work please fix it, USE DEMO MODE OTHERWISE");
+            error.showAndWait();
+
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/login-view.fxml"));
             Parent root = loader.load();
             LoginController controller = loader.getController();
             Scene scene = new Scene(root);
             primaryStage.setScene(scene);
+
         }
+            Main.primaryStage = primaryStage;
         primaryStage.setTitle("FrameSprite");
         primaryStage.show();
     }
