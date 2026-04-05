@@ -6,9 +6,12 @@ import com.frameLab.frameSprite.model.Challenge;
 import com.frameLab.frameSprite.model.Project;
 import com.frameLab.frameSprite.service.HistoryService;
 import com.frameLab.frameSprite.service.ProjectsService;
+import com.frameLab.frameSprite.service.StorageService;
+import com.frameLab.frameSprite.utils.ApiUtils;
 import com.frameLab.frameSprite.utils.SessionUtils;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.concurrent.Task;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -22,9 +25,11 @@ import javafx.scene.image.WritableImage;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
+import javafx.stage.FileChooser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.*;
@@ -193,8 +198,101 @@ public class EditorController {
             alert.showAndWait();
         }
 
+        handleSave(new ActionEvent());
+
+        Alert export = new Alert(Alert.AlertType.CONFIRMATION);
+        export.setTitle("Export Options");
+        export.setHeaderText("How would you like to export your project?");
+
+        ButtonType webButton = new ButtonType("Export to Website");
+        ButtonType zipButton = new ButtonType("Save as ZIP");
+        ButtonType cancelButton = new ButtonType("Cancel", ButtonBar.ButtonData.CANCEL_CLOSE);
+
+        export.getButtonTypes().setAll(webButton, zipButton, cancelButton);
+
+        Optional<ButtonType> result = export.showAndWait();
+
+        if (result.isPresent()) {
+            if (result.get() == webButton) {
+                exportToWebsite();
+            } else if (result.get() == zipButton) {
+                exportAsZip();
+            }
+        }
+
     }
 
+    private void exportAsZip() {
+
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Save Project as ZIP");
+        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("ZIP Archive", "*.zip"));
+
+        String defaultName = "Project_" + currentProject.getId() + ".zip";
+        if (currentProject.getTitle() != null && !currentProject.getTitle().isEmpty()) {
+            defaultName = currentProject.getTitle().replaceAll("\\s+", "_") + "_Project.zip";
+        }
+        fileChooser.setInitialFileName(defaultName);
+
+        File zipFile = fileChooser.showSaveDialog(canvasContainer.getScene().getWindow());
+        if (zipFile == null) return;
+
+        try {
+            StorageService storageService = new StorageService();
+            storageService.exportProjectAsZip(currentProject, zipFile);
+
+            new Alert(Alert.AlertType.INFORMATION, "Project successfully exported as ZIP!").showAndWait();
+
+        } catch (Exception e) {
+            log.error("AAA", e);
+            new Alert(Alert.AlertType.ERROR, "Failed to create ZIP file: " + e.getMessage()).showAndWait();
+        }
+    }
+    private void exportToWebsite(){
+        Task<Void> uploadTask = new Task<Void>() {
+            @Override
+            protected Void call() throws Exception {
+                File previewFile = new File("projects/" + currentProject.getId() + "/preview.png");
+                if (!previewFile.exists()){
+                    throw new RuntimeException("No Preview image");
+                }
+
+                ApiUtils apiUtils = new ApiUtils();
+
+                int responseCode = apiUtils.uploadEntry(
+                        SessionUtils.getInstance().getUser().getId(),
+                        currentProject.getChallengeId(),
+                        previewFile
+                );
+
+                if (responseCode == 404) {
+                    throw new IllegalStateException("You already have an Entry for this challenge");
+                } else if (responseCode == 401) {
+                    throw new IllegalStateException("Session Expired, please reconnect");
+                } else if (responseCode != 200) {
+                    throw new RuntimeException("Something happened please try later ");
+                }
+
+                return null;
+
+            }
+        };
+
+        uploadTask.setOnSucceeded(e -> {
+            new Alert(Alert.AlertType.INFORMATION, "Export was a success !").showAndWait();
+        });
+
+        uploadTask.setOnFailed(e -> {
+            Throwable error = uploadTask.getException();
+            Alert alert = new Alert(Alert.AlertType.WARNING);
+            alert.setTitle("Export failed");
+            alert.setHeaderText("The Export failed to reach the website");
+            alert.setContentText(error.getMessage());
+            alert.showAndWait();
+        });
+
+        new Thread(uploadTask).start();
+    }
 
     private void setActiveLayer(SpriteLayer layer){
         for(Node node : canvasContainer.getChildren()){

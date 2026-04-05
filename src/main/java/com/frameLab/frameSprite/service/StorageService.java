@@ -17,18 +17,21 @@ import javafx.scene.paint.Color;
 import javafx.scene.transform.Scale;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 public class StorageService {
     private final String BASE_PATH = "projects/";
     private final ObjectMapper mapper = new ObjectMapper();
 
-    StorageService(){
+    public StorageService(){
 
     }
 
@@ -141,4 +144,27 @@ public class StorageService {
         ImageIO.write(SwingFXUtils.fromFXImage(thumbnail, null), "png", previewFile);
     }
 
+
+    public void exportProjectAsZip(Project project, File targetZipFile) throws IOException {
+        Path sourceDir = Path.of(BASE_PATH + project.getId());
+        if (!Files.exists(sourceDir)) {
+            throw new IOException("File Doesn't exist : " + sourceDir);
+        }
+
+        ZipOutputStream zos = new ZipOutputStream(new FileOutputStream(targetZipFile));
+
+        Files.walk(sourceDir)
+                    .filter(path -> !Files.isDirectory(path))
+                    .forEach(path -> {
+                        try {
+                            ZipEntry zipEntry = new ZipEntry(sourceDir.relativize(path).toString());
+                            zos.putNextEntry(zipEntry);
+                            Files.copy(path, zos);
+                            zos.closeEntry();
+                        } catch (IOException e) {
+                            throw new RuntimeException("Can't compress file : " + path, e);
+                        }
+                    });
+
+    }
 }
