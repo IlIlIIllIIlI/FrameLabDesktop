@@ -14,9 +14,16 @@
             <Button onAction="#handleUndo">Undo</Button>
             <Button onAction="#handleRedo">Redo</Button>
 
+            <MenuButton text="Filters">
+                <items>
+                    <MenuItem text="Black &amp; White" onAction="#handleApplyGrayscale"/>
+                </items>
+            </MenuButton>
+
+
             <Label>Color :</Label>
             <ColorPicker fx:id="colorPicker"/>
-
+            <ToggleButton fx:id="eraserToggle" text="Eraser" />
             <Label>Width : </Label>
             <Slider fx:id="widthSlider" min="1" max="50"/>
         </HBox>

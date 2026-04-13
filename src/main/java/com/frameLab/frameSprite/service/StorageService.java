@@ -167,4 +167,18 @@ public class StorageService {
                     });
 
     }
+
+
+    public void deleteProjectFiles(int projectId) throws IOException {
+        Path path = Path.of(BASE_PATH + projectId);
+        if (Files.exists(path)) {
+            File[] files = path.toFile().listFiles();
+            if (files != null) {
+                for (File file : files) {
+                    Files.delete(file.toPath());
+                }
+            }
+            Files.delete(path);
+        }
+    }
 }

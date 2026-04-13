@@ -1,6 +1,8 @@
 package com.frameLab.frameSprite.controller;
 
 import com.frameLab.frameSprite.Sprites.SpriteLayer;
+import com.frameLab.frameSprite.effect.FilterCommand;
+import com.frameLab.frameSprite.effect.GrayScaleFilter;
 import com.frameLab.frameSprite.effect.Paint;
 import com.frameLab.frameSprite.model.Challenge;
 import com.frameLab.frameSprite.model.Project;
@@ -22,9 +24,13 @@ import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.WritableImage;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
+import javafx.scene.shape.StrokeLineCap;
+import javafx.scene.shape.StrokeLineJoin;
 import javafx.stage.FileChooser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,6 +42,8 @@ import java.util.*;
 
 public class EditorController {
     private static final Logger log = LoggerFactory.getLogger(EditorController.class);
+    @FXML
+    private ToggleButton eraserToggle;
     @FXML
     private Slider widthSlider;
     @FXML
@@ -49,6 +57,8 @@ public class EditorController {
     private Project currentProject;
     private Canvas currentCanvas;
     private Paint currentPaintCommand;
+    private double lastX;
+    private double lastY;
 
     private ObservableList<SpriteLayer> layerListModel;
 
@@ -73,8 +83,8 @@ public class EditorController {
         layerListView.setItems(layerListModel);
         layerListView.setCellFactory(c ->new ListCell<SpriteLayer>() {
 
-            private HBox root;
-            private LayerController layerController;
+            private final HBox root;
+            private final LayerController layerController;
 
             {
                 try {
@@ -115,6 +125,24 @@ public class EditorController {
         layerListView.getSelectionModel().selectFirst();
 
         drawing();
+
+        canvasContainer.sceneProperty().addListener((obs, oldScene, newScene) -> {
+            if (newScene != null) {
+                newScene.addEventFilter(KeyEvent.KEY_PRESSED, event -> {
+                    if (event.isControlDown() && event.getCode() == KeyCode.Z) {
+                        if (event.isShiftDown()) {
+                            handleRedo(new ActionEvent());
+                        } else {
+                            handleUndo(new ActionEvent());
+                        }
+
+                        event.consume();
+                    }
+                });
+            }
+
+            });
+
     }
 
     private void loadChallengeBackground() {
@@ -323,20 +351,53 @@ public class EditorController {
 
     private void drawing() {
         GraphicsContext gc = currentCanvas.getGraphicsContext2D();
+
+        gc.setLineCap(javafx.scene.shape.StrokeLineCap.ROUND);
+        gc.setLineJoin(javafx.scene.shape.StrokeLineJoin.ROUND);
+
         canvasContainer.setOnMousePressed(e -> {
-            currentPaintCommand = new Paint(currentCanvas, 0,0,currentCanvas.getWidth(),currentCanvas.getHeight());
-            gc.setStroke(colorPicker.getValue());
-            gc.setLineWidth(widthSlider.getValue());
-            gc.beginPath();
-            gc.moveTo(e.getX(),e.getY());
-            gc.stroke();
+            currentPaintCommand = new Paint(currentCanvas, 0, 0, currentCanvas.getWidth(), currentCanvas.getHeight());
+
+            double size = widthSlider.getValue();
+            lastX = e.getX();
+            lastY = e.getY();
+
+            if (eraserToggle != null && eraserToggle.isSelected()) {
+                gc.clearRect(lastX - size / 2, lastY - size / 2, size, size);
+            } else {
+                gc.setStroke(colorPicker.getValue());
+                gc.setLineWidth(size);
+                gc.beginPath();
+                gc.moveTo(lastX, lastY);
+                gc.stroke();
+            }
         });
 
         canvasContainer.setOnMouseDragged(e -> {
-            gc.setStroke(colorPicker.getValue());
-            gc.setLineWidth(widthSlider.getValue());
-            gc.lineTo(e.getX(), e.getY());
-            gc.stroke();
+            double size = widthSlider.getValue();
+            double currentX = e.getX();
+            double currentY = e.getY();
+
+            if (eraserToggle != null && eraserToggle.isSelected()) {
+
+                double distance = Math.hypot(currentX - lastX, currentY - lastY);
+
+                int steps = (int) (distance / (size / 4)) + 1;
+                double dx = (currentX - lastX) / steps;
+                double dy = (currentY - lastY) / steps;
+
+                for (int i = 0; i < steps; i++) {
+                    gc.clearRect(lastX + (dx * i) - size / 2, lastY + (dy * i) - size / 2, size, size);
+                }
+            } else {
+                gc.setStroke(colorPicker.getValue());
+                gc.setLineWidth(size);
+                gc.lineTo(currentX, currentY);
+                gc.stroke();
+            }
+
+            lastX = currentX;
+            lastY = currentY;
         });
 
         canvasContainer.setOnMouseReleased(e -> {
@@ -347,7 +408,6 @@ public class EditorController {
             }
         });
     }
-
 
     @FXML
     private void handleUndo(ActionEvent actionEvent) {
@@ -563,6 +623,16 @@ public class EditorController {
 
         layerListView.getSelectionModel().select(bottom);
     }
+
+    @FXML
+    private void handleApplyGrayscale(ActionEvent actionEvent) {
+        if (currentCanvas == null) return;
+
+        FilterCommand command = new FilterCommand(currentCanvas, new GrayScaleFilter());
+
+        historyService.addCommand(command);
+    }
 }
+
 
 // @TODO ajustement globaux, filtres, geo, supprimer projet TDD

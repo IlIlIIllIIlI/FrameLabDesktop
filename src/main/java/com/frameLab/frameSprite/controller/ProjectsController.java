@@ -8,9 +8,7 @@ import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
-import javafx.scene.control.Dialog;
-import javafx.scene.control.Label;
-import javafx.scene.control.TextInputDialog;
+import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.HBox;
@@ -62,6 +60,27 @@ public class ProjectsController {
                     throw new Exception(e);
                 }
                 Label label = new Label(project.getTitle());
+
+                Button deleteBtn = new Button("Delete");
+                deleteBtn.setOnAction(e -> {
+                    e.consume();
+
+                    Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
+                    confirm.setTitle("Delete Project");
+                    confirm.setHeaderText("Are you sure you want to delete '" + project.getTitle() + "'?");
+                    confirm.setContentText("This action cannot be undone.");
+
+                    confirm.showAndWait().ifPresent(response -> {
+                        if (response == ButtonType.OK) {
+                            try {
+                                projectsService.deleteProject(project);
+                                projectsBox.getChildren().remove(projectBox);
+                            } catch (IOException ex) {
+                                log.error("Failed to delete project", ex);
+                            }
+                        }
+                    });
+                });
 
                 projectBox.getChildren().addAll(label,projectView);
 

@@ -121,4 +121,14 @@ public class ProjectDAO {
         return project.getId() != 0;
     }
 
+    public void delete(int id) {
+        String sql = "DELETE FROM projects WHERE id = ?";
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            pstmt.setInt(1, id);
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException("Delete failed", e);
+        }
+    }
+
 }

@@ -49,4 +49,15 @@ public class ProjectsService {
         storageService.saveFiles(project);
     }
 
+    public void deleteProject(Project project) throws IOException {
+        dao.delete(project.getId());
+
+        storageService.deleteProjectFiles(project.getId());
+
+        User userCache = SessionUtils.getInstance().getUser();
+        if (userCache != null && userCache.getProjects() != null) {
+            userCache.getProjects().removeIf(p -> p.getId() == project.getId());
+        }
+    }
+
 }

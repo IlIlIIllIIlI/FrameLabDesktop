@@ -76,3 +76,5 @@ cookies.*
 keyset.json
 
 projects/
+
+dependency-reduced-pom.xml
