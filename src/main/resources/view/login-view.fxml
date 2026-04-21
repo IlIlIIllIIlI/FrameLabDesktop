@@ -14,7 +14,11 @@
 
         <Label fx:id="errorLabel"/>
 
+        <Label>Email Address</Label>
+
         <TextField fx:id="emailField" promptText ="Email" />
+
+        <Label>Password</Label>
 
         <PasswordField fx:id="passwordField" promptText ="Password" />
 

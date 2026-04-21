@@ -20,27 +20,19 @@ public class FilterCommand implements Command {
         this.canvas = canvas;
         this.gc = canvas.getGraphicsContext2D();
 
+        boolean ogVisible = canvas.isVisible();
+        double ogOpacity = canvas.getOpacity();
+
+        canvas.setVisible(true);
+        canvas.setOpacity(1.0);
+
         SnapshotParameters params = new SnapshotParameters();
         params.setFill(Color.TRANSPARENT);
         this.backup = canvas.snapshot(params, null);
 
-        int width = (int) backup.getWidth();
-        int height = (int) backup.getHeight();
-        this.present = new WritableImage(width, height);
-
-
-        PixelReader reader = backup.getPixelReader();
-        PixelWriter writer = present.getPixelWriter();
-
-        for (int y = 0; y < height; y++) {
-            for (int x = 0; x < width; x++) {
-                int originalArgb = reader.getArgb(x, y);
-
-                int newArgb = filter.apply(originalArgb);
-
-                writer.setArgb(x, y, newArgb);
-            }
-        }
+        canvas.setOpacity(ogOpacity);
+        canvas.setVisible(ogVisible);
+        this.present = filter.apply(backup);
 
         execute();
 

@@ -136,7 +136,6 @@ public class ApiUtils {
         }
     }
 
-
     public int uploadEntry(int userId, int challengeId, File imageFile) throws Exception {
         String boundary = "---Boundary" + System.currentTimeMillis();
         ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
@@ -160,7 +159,6 @@ public class ApiUtils {
 
         writer.append("\r\n--").append(boundary).append("--\r\n");
         writer.flush();
-
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(apiUrl + "/entries"))
                 .timeout(Duration.ofSeconds(30))

@@ -13,6 +13,7 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.VBox;
+import javafx.stage.Stage;
 
 import javax.security.auth.login.LoginException;
 import java.io.FileInputStream;
@@ -81,6 +82,8 @@ public class MainPageController {
 
         task.setOnSucceeded(event -> {
             try {
+                Stage stage = (Stage) projectsButton.getScene().getWindow();
+                stage.setTitle("Projects");
                 Main.changeScene("/view/login-view.fxml");
             } catch (IOException e) {
                 throw new RuntimeException(e);
@@ -94,6 +97,9 @@ public class MainPageController {
 
     public void handleProjects() {
         try {
+
+            Stage stage = (Stage) projectsButton.getScene().getWindow();
+            stage.setTitle("Projects");
             Main.changeScene("/view/projects-view.fxml");
         } catch (IOException e) {
             throw new RuntimeException(e);

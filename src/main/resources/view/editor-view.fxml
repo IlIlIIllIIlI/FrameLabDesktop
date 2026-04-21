@@ -3,12 +3,14 @@
 
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
+<?import javafx.scene.shape.Circle?>
 <AnchorPane xmlns="http://javafx.com/javafx"
             xmlns:fx="http://javafx.com/fxml"
             fx:controller="com.frameLab.frameSprite.controller.EditorController"
             prefHeight="400.0" prefWidth="600.0" >
     <VBox spacing="40.0">
         <HBox>
+            <Button onAction="#handleGoBack">Go back</Button>
             <Button onAction="#handleSave">Save</Button>
             <Button onAction="#handleExport">Export</Button>
             <Button onAction="#handleUndo">Undo</Button>
@@ -17,6 +19,16 @@
             <MenuButton text="Filters">
                 <items>
                     <MenuItem text="Black &amp; White" onAction="#handleApplyGrayscale"/>
+                    <MenuItem text="Sepia" onAction="#handleApplySepia"/>
+                    <MenuItem text="Sharpen" onAction="#handleApplySharpen"/>
+                    <MenuItem text="Blur" onAction="#handleApplyBlur"/>
+                    <MenuItem text="Gaussian Blur" onAction="#handleApplyGaussianBlur"/>
+                    <MenuItem text="Edge" onAction="#handleApplyEdge"/>
+                    <MenuItem text="Reflect" onAction="#handleApplyReflect"/>
+                    <MenuItem text="Vertical Reflect" onAction="#handleApplyVerticalReflect"/>
+
+
+
                 </items>
             </MenuButton>
 
@@ -26,10 +38,31 @@
             <ToggleButton fx:id="eraserToggle" text="Eraser" />
             <Label>Width : </Label>
             <Slider fx:id="widthSlider" min="1" max="50"/>
-        </HBox>
-        <StackPane fx:id="canvasContainer" prefHeight="600.0" prefWidth="800.0">
-        </StackPane>
+            <Label>Rotate : </Label>
+            <Slider fx:id="rotateSlider" max="360"/>
 
+        </HBox>
+        <HBox>
+            <Label>Brightness : </Label>
+            <Slider fx:id="brightnessSlider" min="-255" max="255"/>
+            <Button onAction="#handleApplyBrightness">Apply Brightness</Button>
+        </HBox>
+
+        <StackPane>
+
+            <StackPane fx:id="canvasContainer" prefHeight="600.0" prefWidth="800.0">
+
+            </StackPane>
+
+            <StackPane fx:id="uiOverlay" prefHeight="600.0" prefWidth="800.0" maxHeight="600.0" maxWidth="800.0" mouseTransparent="true">
+                <Circle fx:id="brushCursor"
+                        fill="TRANSPARENT"
+                        stroke="WHITE"
+                        strokeWidth="1.5"
+                        mouseTransparent="true"
+                        visible="false"/>
+            </StackPane>
+        </StackPane>
 
         <VBox spacing="5.0">
             <Label>Layers</Label>

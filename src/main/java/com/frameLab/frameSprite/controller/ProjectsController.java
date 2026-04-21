@@ -1,5 +1,6 @@
 package com.frameLab.frameSprite.controller;
 
+import com.frameLab.frameSprite.Main;
 import com.frameLab.frameSprite.model.Project;
 import com.frameLab.frameSprite.service.ProjectsService;
 import com.frameLab.frameSprite.utils.SessionUtils;
@@ -82,7 +83,7 @@ public class ProjectsController {
                     });
                 });
 
-                projectBox.getChildren().addAll(label,projectView);
+                projectBox.getChildren().addAll(label,projectView,deleteBtn);
 
 
                 projectsBox.getChildren().add(projectBox);
@@ -125,7 +126,18 @@ public class ProjectsController {
 
         Stage stage = (Stage) projectsBox.getScene().getWindow();
 
+        stage.setTitle("FrameSprite: Editor");
         Scene scene = new Scene(root);
         stage.setScene(scene);
+    }
+
+    public void handleGoBack(ActionEvent actionEvent) {
+        try {
+            Stage stage = (Stage) projectsBox.getScene().getWindow();
+            stage.setTitle("FrameSprite: Home");
+            Main.changeScene("/view/main-page-view.fxml");
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

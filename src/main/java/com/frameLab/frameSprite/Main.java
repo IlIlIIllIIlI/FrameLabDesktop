@@ -77,6 +77,7 @@ public class Main extends Application {
         primaryStage.setScene(scene);
     }
 
+
     public static Connection getConnection() {
         return conn;
     }

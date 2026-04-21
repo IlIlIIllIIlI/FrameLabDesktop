@@ -1,8 +1,11 @@
 package com.frameLab.frameSprite.effect;
 
+import javafx.scene.image.Image;
+import javafx.scene.image.WritableImage;
+
 public interface Filter {
 
-        int apply(int argb);
+        WritableImage apply(Image source);
 
         String getName();
 

@@ -11,6 +11,7 @@ import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
+import javafx.stage.Stage;
 
 import javax.security.auth.login.LoginException;
 import java.io.IOException;
@@ -67,6 +68,8 @@ public class LoginController {
         SessionUtils.getInstance().setChallenge(demoChallenge);
 
         try {
+            Stage stage = (Stage) submitButton.getScene().getWindow();
+            stage.setTitle("Projects");
             Main.changeScene("/view/projects-view.fxml");
         } catch (IOException e) {
             throw new RuntimeException(e);

@@ -1,9 +1,8 @@
 package com.frameLab.frameSprite.controller;
 
+import com.frameLab.frameSprite.Main;
 import com.frameLab.frameSprite.Sprites.SpriteLayer;
-import com.frameLab.frameSprite.effect.FilterCommand;
-import com.frameLab.frameSprite.effect.GrayScaleFilter;
-import com.frameLab.frameSprite.effect.Paint;
+import com.frameLab.frameSprite.effect.*;
 import com.frameLab.frameSprite.model.Challenge;
 import com.frameLab.frameSprite.model.Project;
 import com.frameLab.frameSprite.service.HistoryService;
@@ -11,27 +10,38 @@ import com.frameLab.frameSprite.service.ProjectsService;
 import com.frameLab.frameSprite.service.StorageService;
 import com.frameLab.frameSprite.utils.ApiUtils;
 import com.frameLab.frameSprite.utils.SessionUtils;
+import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.concurrent.Task;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
+import javafx.geometry.Point2D;
+import javafx.geometry.Pos;
+import javafx.scene.Cursor;
 import javafx.scene.Node;
 import javafx.scene.SnapshotParameters;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.*;
+import javafx.scene.effect.ColorAdjust;
+import javafx.scene.effect.Effect;
 import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.scene.image.WritableImage;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
+import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
+import javafx.scene.shape.Circle;
 import javafx.scene.shape.StrokeLineCap;
 import javafx.scene.shape.StrokeLineJoin;
 import javafx.stage.FileChooser;
+import javafx.stage.Stage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -42,6 +52,14 @@ import java.util.*;
 
 public class EditorController {
     private static final Logger log = LoggerFactory.getLogger(EditorController.class);
+    @FXML
+    private StackPane uiOverlay;
+    @FXML
+    private Circle brushCursor;
+    @FXML
+    private Slider brightnessSlider;
+    @FXML
+    private Slider rotateSlider;
     @FXML
     private ToggleButton eraserToggle;
     @FXML
@@ -66,6 +84,11 @@ public class EditorController {
     public void initialize(){
         this.historyService = new HistoryService();
         this.projectsService = new ProjectsService();
+        rotateSlider.valueProperty().addListener((obs, old, next) -> {
+            if (currentCanvas != null) {
+                this.handleApplyRotate(next.intValue());
+            }
+        });
     }
 
     public void initData(Project project){
@@ -138,11 +161,39 @@ public class EditorController {
 
                         event.consume();
                     }
+                    if (event.isControlDown() && event.getCode() == KeyCode.S) {
+                        try {
+                            handleSave(new ActionEvent());
+                        } catch (IOException e) {
+                            new Alert(Alert.AlertType.ERROR, "Failed to save file: " + e.getMessage()).showAndWait();
+                        }
+
+                        event.consume();
+                    }
                 });
             }
 
             });
 
+        canvasContainer.setCursor(Cursor.NONE);
+        uiOverlay.setCursor(Cursor.NONE);
+
+        brushCursor.radiusProperty().bind(widthSlider.valueProperty().divide(2));
+
+        canvasContainer.addEventFilter(MouseEvent.MOUSE_MOVED, this::updateCursorPosition);
+        canvasContainer.addEventFilter(MouseEvent.MOUSE_DRAGGED, this::updateCursorPosition);
+
+        canvasContainer.addEventFilter(MouseEvent.MOUSE_ENTERED, e -> brushCursor.setVisible(true));
+        canvasContainer.addEventFilter(MouseEvent.MOUSE_EXITED, e -> brushCursor.setVisible(false));
+
+    }
+
+    private void updateCursorPosition(MouseEvent e) {
+        double centerX = e.getX() - (canvasContainer.getWidth() / 2);
+        double centerY = e.getY() - (canvasContainer.getHeight() / 2);
+
+        brushCursor.setTranslateX(centerX);
+        brushCursor.setTranslateY(centerY);
     }
 
     private void loadChallengeBackground() {
@@ -224,19 +275,33 @@ public class EditorController {
             alert.setHeaderText("No Export");
             alert.setContentText("You can't export while in Demo Mode");
             alert.showAndWait();
+            return;
         }
 
         handleSave(new ActionEvent());
 
-        Alert export = new Alert(Alert.AlertType.CONFIRMATION);
+        SnapshotParameters params = new SnapshotParameters();
+        params.setFill(Color.TRANSPARENT);
+        WritableImage previewImage = canvasContainer.snapshot(params, null);
+
+        ImageView previewView = new ImageView(previewImage);
+        previewView.setFitWidth(400);
+        previewView.setPreserveRatio(true);
+
+        Dialog<ButtonType> export = new Dialog<>();
         export.setTitle("Export Options");
         export.setHeaderText("How would you like to export your project?");
+
+        VBox content = new VBox(20);
+        content.setAlignment(Pos.CENTER);
+        content.getChildren().addAll(previewView);
+        export.getDialogPane().setContent(content);
 
         ButtonType webButton = new ButtonType("Export to Website");
         ButtonType zipButton = new ButtonType("Save as ZIP");
         ButtonType cancelButton = new ButtonType("Cancel", ButtonBar.ButtonData.CANCEL_CLOSE);
 
-        export.getButtonTypes().setAll(webButton, zipButton, cancelButton);
+        export.getDialogPane().getButtonTypes().setAll(webButton, zipButton, cancelButton);
 
         Optional<ButtonType> result = export.showAndWait();
 
@@ -272,11 +337,26 @@ public class EditorController {
             new Alert(Alert.AlertType.INFORMATION, "Project successfully exported as ZIP!").showAndWait();
 
         } catch (Exception e) {
-            log.error("AAA", e);
             new Alert(Alert.AlertType.ERROR, "Failed to create ZIP file: " + e.getMessage()).showAndWait();
         }
     }
     private void exportToWebsite(){
+
+        Dialog<Void> loadingDialog = new Dialog<>();
+        loadingDialog.setTitle("Exporting");
+        loadingDialog.setHeaderText("Uploading to the website... Please wait.");
+
+        ProgressBar progressBar = new ProgressBar();
+        progressBar.setProgress(ProgressBar.INDETERMINATE_PROGRESS);
+        progressBar.setPrefWidth(300);
+
+        VBox loadingContent = new VBox(10, progressBar);
+        loadingContent.setAlignment(Pos.CENTER);
+        loadingDialog.getDialogPane().setContent(loadingContent);
+
+        loadingDialog.getDialogPane().getButtonTypes().add(ButtonType.CANCEL);
+        loadingDialog.getDialogPane().lookupButton(ButtonType.CANCEL).setVisible(false);
+
         Task<Void> uploadTask = new Task<Void>() {
             @Override
             protected Void call() throws Exception {
@@ -285,13 +365,13 @@ public class EditorController {
                     throw new RuntimeException("No Preview image");
                 }
 
-                ApiUtils apiUtils = new ApiUtils();
+               ApiUtils apiUtils = new ApiUtils();
 
-                int responseCode = apiUtils.uploadEntry(
-                        SessionUtils.getInstance().getUser().getId(),
-                        currentProject.getChallengeId(),
-                        previewFile
-                );
+               int responseCode = apiUtils.uploadEntry(
+                       SessionUtils.getInstance().getUser().getId(),
+                       currentProject.getChallengeId(),
+                       previewFile
+               );
 
                 if (responseCode == 404) {
                     throw new IllegalStateException("You already have an Entry for this challenge");
@@ -307,19 +387,36 @@ public class EditorController {
         };
 
         uploadTask.setOnSucceeded(e -> {
-            new Alert(Alert.AlertType.INFORMATION, "Export was a success !").showAndWait();
+            loadingDialog.setResult(null);
+            loadingDialog.close();
+
+            Platform.runLater(() -> {
+                Alert alert = new Alert(Alert.AlertType.INFORMATION);
+                alert.setTitle("Success");
+                alert.setHeaderText(null);
+                alert.setContentText("Export was a success!");
+                alert.showAndWait();
+            });
         });
 
         uploadTask.setOnFailed(e -> {
-            Throwable error = uploadTask.getException();
-            Alert alert = new Alert(Alert.AlertType.WARNING);
-            alert.setTitle("Export failed");
-            alert.setHeaderText("The Export failed to reach the website");
-            alert.setContentText(error.getMessage());
-            alert.showAndWait();
+            loadingDialog.setResult(null);
+            loadingDialog.close();
+
+            Platform.runLater(() -> {
+                Throwable error = uploadTask.getException();
+                Alert alert = new Alert(Alert.AlertType.WARNING);
+                alert.setTitle("Export failed");
+                alert.setHeaderText("The Export failed to reach the website");
+                alert.setContentText(error.getMessage());
+                alert.showAndWait();
+            });
         });
 
-        new Thread(uploadTask).start();
+        loadingDialog.setOnShown(event -> {
+            new Thread(uploadTask).start();
+        });
+        loadingDialog.showAndWait();
     }
 
     private void setActiveLayer(SpriteLayer layer){
@@ -359,8 +456,9 @@ public class EditorController {
             currentPaintCommand = new Paint(currentCanvas, 0, 0, currentCanvas.getWidth(), currentCanvas.getHeight());
 
             double size = widthSlider.getValue();
-            lastX = e.getX();
-            lastY = e.getY();
+            Point2D p = currentCanvas.sceneToLocal(e.getSceneX(), e.getSceneY());
+            lastX = p.getX();
+            lastY = p.getY();
 
             if (eraserToggle != null && eraserToggle.isSelected()) {
                 gc.clearRect(lastX - size / 2, lastY - size / 2, size, size);
@@ -375,8 +473,9 @@ public class EditorController {
 
         canvasContainer.setOnMouseDragged(e -> {
             double size = widthSlider.getValue();
-            double currentX = e.getX();
-            double currentY = e.getY();
+            Point2D p = currentCanvas.sceneToLocal(e.getSceneX(), e.getSceneY());
+            double currentX = p.getX();
+            double currentY = p.getY();
 
             if (eraserToggle != null && eraserToggle.isSelected()) {
 
@@ -632,7 +731,109 @@ public class EditorController {
 
         historyService.addCommand(command);
     }
+
+    @FXML
+    private void handleApplySepia(ActionEvent actionEvent) {
+        if (currentCanvas == null) return;
+
+        FilterCommand command = new FilterCommand(currentCanvas, new SepiaFilter());
+
+        historyService.addCommand(command);
+    }
+
+    @FXML
+    private void handleApplySharpen(ActionEvent actionEvent) {
+        if (currentCanvas == null) return;
+
+        FilterCommand command = new FilterCommand(currentCanvas, new SharpFilter());
+
+        historyService.addCommand(command);
+    }
+
+    @FXML
+    private void handleApplyBlur(ActionEvent actionEvent) {
+        if (currentCanvas == null) return;
+
+        FilterCommand command = new FilterCommand(currentCanvas, new BlurFilter());
+
+        historyService.addCommand(command);
+    }
+
+    @FXML
+    private void handleApplyGaussianBlur(ActionEvent actionEvent) {
+        if (currentCanvas == null) return;
+
+        FilterCommand command = new FilterCommand(currentCanvas, new GaussianBlurFilter());
+
+        historyService.addCommand(command);
+    }
+
+    @FXML
+    private void handleApplyEdge(ActionEvent actionEvent) {
+        if (currentCanvas == null) return;
+
+        FilterCommand command = new FilterCommand(currentCanvas, new EdgeFilter());
+
+        historyService.addCommand(command);
+    }
+
+    @FXML
+    private void handleApplyReflect(ActionEvent actionEvent) {
+        if (currentCanvas == null) return;
+
+        FilterCommand command = new FilterCommand(currentCanvas, new ReflectFilter());
+
+        historyService.addCommand(command);
+    }
+
+    @FXML
+    private void handleApplyVerticalReflect(ActionEvent actionEvent) {
+        if (currentCanvas == null) return;
+
+        FilterCommand command = new FilterCommand(currentCanvas, new VerticalReflectFilter());
+
+        historyService.addCommand(command);
+    }
+
+
+    @FXML
+    private void handleBrightness(ActionEvent actionEvent) {
+        if (currentCanvas == null) return;
+        Dialog<Integer> brightness = new Dialog<>();
+        brightness.setTitle("Brightness Adjustment");
+        brightness.setHeaderText("How would you like to export your project?");
+
+        ButtonType applyButton = new ButtonType("Apply");
+        ButtonType cancelButton = new ButtonType("Cancel", ButtonBar.ButtonData.CANCEL_CLOSE);
+
+
+    }
+
+    @FXML
+    private void handleApplyBrightness(ActionEvent actionEvent) {
+        if (currentCanvas == null) return;
+
+        FilterCommand command = new FilterCommand(currentCanvas, new BrightnessFilter((int) brightnessSlider.getValue()));
+
+        historyService.addCommand(command);
+    }
+
+    private void handleApplyRotate(int rotation) {
+        if (currentCanvas == null) return;
+
+        currentCanvas.setRotate(rotation);
+    }
+
+    public void handleGoBack(ActionEvent actionEvent) {
+        try {
+            Stage stage = (Stage) widthSlider.getScene().getWindow();
+            stage.setTitle("Projects");
+            Main.changeScene("/view/projects-view.fxml");
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
 }
 
 
-// @TODO ajustement globaux, filtres, geo, supprimer projet TDD
+// @TODO ajustement globaux, TDD

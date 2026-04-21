@@ -1,21 +1,21 @@
 package com.frameLab.frameSprite.effect;
 
-public class GrayScaleFilter implements Filter {
+public class GrayScaleFilter extends PixelFilter {
     @Override
-    public int apply(int argb) {
-            int a = (argb >> 24) & 0xFF;
+    public int processPixel(int argb) {
+            int alpha = (argb >> 24) & 0xFF;
 
-            if (a == 0) {
+            if (alpha == 0) {
                 return argb;
             }
 
-            int r = (argb >> 16) & 0xFF;
-            int g = (argb >> 8) & 0xFF;
-            int b = argb & 0xFF;
+            int red = (argb >> 16) & 0xFF;
+            int green = (argb >> 8) & 0xFF;
+            int blue = argb & 0xFF;
 
-            int lum = (int) (r * 0.2126 + g * 0.7152 + b * 0.0722);
+            int lum = (int) (red * 0.2126 + green * 0.7152 + blue * 0.0722);
 
-            return (a << 24) | (lum << 16) | (lum << 8) | lum;
+            return (alpha << 24) | (lum << 16) | (lum << 8) | lum;
     }
 
     @Override
