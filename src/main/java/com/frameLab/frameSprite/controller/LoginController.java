@@ -12,12 +12,13 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.stage.Stage;
+import javafx.application.Application;
 
 import javax.security.auth.login.LoginException;
 import java.io.IOException;
+import java.util.Properties;
 
 public class LoginController {
-    public Button demoButton;
     @FXML
     private Label errorLabel;
     @FXML
@@ -31,7 +32,7 @@ public class LoginController {
     }
 
     @FXML
-    public void handleLogin(ActionEvent actionEvent) throws LoginException {
+    private void handleLogin(ActionEvent actionEvent) throws LoginException {
         Task<Boolean> task = new Task<>() {
             @Override
             protected Boolean call() throws Exception {
@@ -75,5 +76,13 @@ public class LoginController {
             throw new RuntimeException(e);
         }
 
+    }
+
+    @FXML
+    private void handleCreate(ActionEvent actionEvent) throws IOException {
+        Properties config = new Properties();
+        config.load(getClass().getResourceAsStream("/config.properties"));
+
+        Main.openWebsite(config.getProperty("website")+"/register");
     }
 }

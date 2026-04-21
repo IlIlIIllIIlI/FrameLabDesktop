@@ -3,7 +3,9 @@ package com.frameLab.frameSprite;
 import com.frameLab.frameSprite.controller.LoginController;
 import com.frameLab.frameSprite.controller.MainPageController;
 import com.frameLab.frameSprite.utils.ApiUtils;
+import com.sun.javafx.application.HostServicesDelegate;
 import javafx.application.Application;
+import javafx.application.HostServices;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
@@ -19,6 +21,7 @@ import java.util.Objects;
 public class Main extends Application {
     private static Stage primaryStage;
     public static  Connection conn;
+    private static HostServices hostServices;
 
     static {
         try {
@@ -35,6 +38,7 @@ public class Main extends Application {
     @Override
     public void start(Stage primaryStage) throws Exception {
         try {
+            hostServices = getHostServices();
             ApiUtils au = new ApiUtils();
             if (au.isLogged()){
                 FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/main-page-view.fxml"));
@@ -80,5 +84,9 @@ public class Main extends Application {
 
     public static Connection getConnection() {
         return conn;
+    }
+
+    public static void openWebsite(String url){
+       hostServices.showDocument(url);
     }
 }

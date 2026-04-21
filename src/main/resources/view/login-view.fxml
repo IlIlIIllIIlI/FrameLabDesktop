@@ -23,7 +23,8 @@
         <PasswordField fx:id="passwordField" promptText ="Password" />
 
         <Button fx:id="submitButton" text="Submit" onAction="#handleLogin"/>
+        <Button text="Create an Account" onAction="#handleCreate"/>
 
-        <Button fx:id="demoButton" text="Demo Mode" onAction="#handleDemo"/>
+        <Button  text="Demo Mode" onAction="#handleDemo"/>
     </VBox>
 </AnchorPane>
