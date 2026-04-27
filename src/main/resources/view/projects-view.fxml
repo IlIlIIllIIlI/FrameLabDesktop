@@ -18,5 +18,8 @@
         </VBox>
         <Label> New Project ?  </Label>
         <Button onAction="#handleNew">Start a new project</Button>
+
+        <Label> Got a Backup ? </Label>
+        <Button onAction="#handleImport">Import Project</Button>
     </HBox>
 </AnchorPane>

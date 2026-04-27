@@ -1,30 +1,64 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import java.lang.*?>
-<?import java.util.*?>
-<?import javafx.scene.*?>
+<?import javafx.geometry.Insets?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
+<?import javafx.scene.text.Font?>
 
-<AnchorPane xmlns="http://javafx.com/javafx"
+<BorderPane xmlns="http://javafx.com/javafx"
             xmlns:fx="http://javafx.com/fxml"
             fx:controller="com.frameLab.frameSprite.controller.LoginController"
             prefHeight="400.0" prefWidth="600.0">
-    <VBox spacing="20.0">
 
-        <Label fx:id="errorLabel"/>
+    <center>
 
-        <Label>Email Address</Label>
+        <VBox alignment="CENTER" maxWidth="320.0" spacing="15.0">
+            <BorderPane.margin>
+                <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
+            </BorderPane.margin>
 
-        <TextField fx:id="emailField" promptText ="Email" />
+            <VBox alignment="CENTER" spacing="5.0">
+                <Label text="Welcome">
+                    <font>
+                        <Font name="System Bold" size="28.0" />
+                    </font>
+                </Label>
+                <Label text="Sign in to continue to FrameSprite" textFill="#666666" />
+            </VBox>
 
-        <Label>Password</Label>
+            <Label fx:id="errorLabel" textFill="RED" wrapText="true" />
 
-        <PasswordField fx:id="passwordField" promptText ="Password" />
+            <VBox spacing="5.0">
+                <Label text="Email Address">
+                    <font>
+                        <Font name="System Bold" size="12.0" />
+                    </font>
+                </Label>
+                <TextField fx:id="emailField" prefHeight="35.0" promptText="Enter your email" />
+            </VBox>
 
-        <Button fx:id="submitButton" text="Submit" onAction="#handleLogin"/>
-        <Button text="Create an Account" onAction="#handleCreate"/>
+            <VBox spacing="5.0">
+                <Label text="Password">
+                    <font>
+                        <Font name="System Bold" size="12.0" />
+                    </font>
+                </Label>
+                <PasswordField fx:id="passwordField" prefHeight="35.0" promptText="Enter your password" />
+            </VBox>
 
-        <Button  text="Demo Mode" onAction="#handleDemo"/>
-    </VBox>
-</AnchorPane>
+            <VBox spacing="10.0">
+                <VBox.margin>
+                    <Insets top="10.0" />
+                </VBox.margin>
+
+                <Button fx:id="submitButton" defaultButton="true" maxWidth="Infinity" onAction="#handleLogin" prefHeight="35.0" text="Sign In" />
+
+                <HBox spacing="10.0">
+                    <Button maxWidth="Infinity" onAction="#handleCreate" text="Create an Account" HBox.hgrow="ALWAYS" />
+                    <Button maxWidth="Infinity" onAction="#handleDemo" text="Demo Mode" HBox.hgrow="ALWAYS" />
+                </HBox>
+            </VBox>
+
+        </VBox>
+    </center>
+</BorderPane>

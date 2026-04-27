@@ -17,7 +17,7 @@ public class Project {
     private List<SpriteLayer> layers;
     private Date lastModified;
 
-    private Project(){
+    public Project(){
         this.id = 0;
         this.layers = new ArrayList<>();
     }

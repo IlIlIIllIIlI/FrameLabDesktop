@@ -15,8 +15,10 @@ import javax.imageio.ImageIO;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.paint.Color;
 import javafx.scene.transform.Scale;
+import javafx.stage.FileChooser;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -25,6 +27,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
 public class StorageService {
@@ -181,4 +184,36 @@ public class StorageService {
             Files.delete(path);
         }
     }
-}
+
+    public void importProjectFromZip(File zipFile, int id) throws IOException {
+        File targetDir = new File(BASE_PATH + id);
+        if (!targetDir.exists()) {
+            Files.createDirectories(targetDir.toPath());
+        }
+
+        try (ZipInputStream zis = new ZipInputStream(new FileInputStream(zipFile))) {
+            ZipEntry entry;
+            byte[] buffer = new byte[1024];
+
+            while ((entry = zis.getNextEntry()) != null) {
+                File newFile = new File(targetDir, entry.getName());
+                if (entry.isDirectory()) {
+                    Files.createDirectories(newFile.toPath());
+                } else {
+                    if (newFile.getParentFile() != null) {
+                        Files.createDirectories(newFile.getParentFile().toPath());
+                    }
+                    try (FileOutputStream fos = new FileOutputStream(newFile)) {
+                        int length;
+                        while ((length = zis.read(buffer)) > 0) {
+                            fos.write(buffer, 0, length);
+                        }
+                    }
+                }
+                zis.closeEntry();
+            }
+
+        }
+
+        }
+    }

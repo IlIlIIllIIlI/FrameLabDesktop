@@ -1,8 +1,10 @@
 package com.frameLab.frameSprite.controller;
 
 import com.frameLab.frameSprite.Main;
+import com.frameLab.frameSprite.dao.ProjectDAO;
 import com.frameLab.frameSprite.model.Project;
 import com.frameLab.frameSprite.service.ProjectsService;
+import com.frameLab.frameSprite.service.StorageService;
 import com.frameLab.frameSprite.utils.SessionUtils;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -14,10 +16,12 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
+import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
@@ -139,5 +143,60 @@ public class ProjectsController {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    @FXML
+    private void handleImport(ActionEvent actionEvent) {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Import Project ZIP");
+        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("ZIP Archive", "*.zip"));
+
+        File zipFile = fileChooser.showOpenDialog(projectsBox.getScene().getWindow());
+        if (zipFile == null) return;
+
+        Dialog<String> dialog = new TextInputDialog("Imported_Project");
+        dialog.setTitle("Import Project");
+        dialog.setHeaderText("Name your imported project");
+        dialog.setContentText("Title :");
+
+        Optional<String> result = dialog.showAndWait();
+
+        result.ifPresent(title -> {
+            try {
+                Project importedProject = new Project();
+                importedProject.setTitle(title);
+                importedProject.setUserId(cache.getUser().getId());
+                importedProject.setChallengeId(cache.getChallenge().getId());
+                importedProject.setWidth(800);
+                importedProject.setHeight(600);
+
+                ProjectDAO projectDAO = new ProjectDAO();
+                projectDAO.save(importedProject);
+
+
+                StorageService storageService = new StorageService();
+                storageService.importProjectFromZip(zipFile, importedProject.getId());
+
+                Alert alert = new Alert(Alert.AlertType.INFORMATION);
+                alert.setTitle("Import Successful");
+                alert.setHeaderText(null);
+                alert.setContentText("Project has been successfully imported!");
+                alert.showAndWait();
+
+
+                if (projectsBox.getChildren().size() > 1) {
+                    projectsBox.getChildren().remove(1, projectsBox.getChildren().size());
+                }
+                loadProjects();
+
+            } catch (Exception e) {
+                Alert error = new Alert(Alert.AlertType.ERROR);
+                error.setTitle("Import Failed");
+                error.setHeaderText("Could not import the project");
+                error.setContentText(e.getMessage());
+                error.showAndWait();
+            }
+        });
+
     }
 }
