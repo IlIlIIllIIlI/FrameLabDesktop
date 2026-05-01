@@ -70,6 +70,28 @@ public class ApiUtils {
         }
     }
 
+    public String getFirstName() throws LoginException {
+
+        try{
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(apiUrl+"/auth/me"))
+                    .timeout(Duration.ofSeconds(30))
+                    .GET()
+                    .build();
+            HttpResponse<String> response = client.send(request,
+                    HttpResponse.BodyHandlers.ofString());
+
+
+            if (response.statusCode() == 200) {
+                objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+                return objectMapper.readValue(response.body(), JsonUtils.Parsing.class).getUser().getFirstName();
+            }
+            throw new Exception("API ERROR : " + response.body());
+        } catch (Exception e) {
+            throw new LoginException(e.getMessage());
+        }
+    }
+
     public void logOut() throws Exception {
         try{
             HttpRequest request = HttpRequest.newBuilder()

@@ -49,4 +49,7 @@ public class User {
         return email;
     }
 
+    public String getFirstName() {
+        return firstName;
+    }
 }

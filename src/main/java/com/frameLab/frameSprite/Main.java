@@ -10,7 +10,10 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
+import javafx.scene.image.Image;
 import javafx.stage.Stage;
+import org.girod.javafx.svgimage.SVGImage;
+import org.girod.javafx.svgimage.SVGLoader;
 
 import java.io.IOException;
 import java.sql.Connection;
@@ -37,6 +40,8 @@ public class Main extends Application {
 
     @Override
     public void start(Stage primaryStage) throws Exception {
+        SVGImage icon = SVGLoader.load(Objects.requireNonNull(getClass().getResource("/assets/icon.svg")));
+        primaryStage.getIcons().add(icon.toImage());
         try {
             hostServices = getHostServices();
             ApiUtils au = new ApiUtils();

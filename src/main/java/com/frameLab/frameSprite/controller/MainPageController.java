@@ -4,9 +4,11 @@ import com.frameLab.frameSprite.Main;
 import com.frameLab.frameSprite.model.Challenge;
 import com.frameLab.frameSprite.service.ChallengesService;
 import com.frameLab.frameSprite.utils.ApiUtils;
+import com.frameLab.frameSprite.utils.SessionUtils;
 import javafx.concurrent.Task;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.image.Image;
@@ -63,35 +65,40 @@ public class MainPageController {
 
 
     public void setLabel() throws LoginException {
-        helloLabel.setText("Hello "+au.getEmail());
+        helloLabel.setText("Hello "+au.getFirstName());
 
     }
 
 
     @FXML
     public void handleLogOut(ActionEvent actionEvent) throws Exception {
+        if (SessionUtils.getInstance().getUser().getId() == -1) {
+            Stage stage = (Stage) projectsButton.getScene().getWindow();
+            stage.setTitle("Projects");
+            Main.changeScene("/view/login-view.fxml");
+        } else {
+            Task<Void> task = new Task<Void>() {
+                @Override
+                protected Void call() throws Exception {
+                   au.logOut();
+                   return null;
+                }
 
-        Task<Void> task = new Task<Void>() {
-            @Override
-            protected Void call() throws Exception {
-               au.logOut();
-               return null;
-            }
+            };
 
-        };
+            task.setOnSucceeded(event -> {
+                try {
+                    Stage stage = (Stage) projectsButton.getScene().getWindow();
+                    stage.setTitle("Projects");
+                    Main.changeScene("/view/login-view.fxml");
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            });
 
-        task.setOnSucceeded(event -> {
-            try {
-                Stage stage = (Stage) projectsButton.getScene().getWindow();
-                stage.setTitle("Projects");
-                Main.changeScene("/view/login-view.fxml");
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        });
-
-        Thread thread = new Thread(task);
-        thread.start();
+            Thread thread = new Thread(task);
+            thread.start();
+        }
     }
 
 

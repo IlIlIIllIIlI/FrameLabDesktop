@@ -99,13 +99,19 @@ public class ProjectsController {
         stage.setScene(scene);
     }
 
-    public void handleGoBack(ActionEvent actionEvent) {
-        try {
+    public void handleGoBack(ActionEvent actionEvent) throws IOException {
+        if (SessionUtils.getInstance().getUser().getId() == -1) {
             Stage stage = (Stage) projectsBox.getScene().getWindow();
-            stage.setTitle("FrameSprite: Home");
-            Main.changeScene("/view/main-page-view.fxml");
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+            stage.setTitle("Projects");
+            Main.changeScene("/view/login-view.fxml");
+        } else {
+            try {
+                Stage stage = (Stage) projectsBox.getScene().getWindow();
+                stage.setTitle("FrameSprite: Home");
+                Main.changeScene("/view/main-page-view.fxml");
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
         }
     }
 
