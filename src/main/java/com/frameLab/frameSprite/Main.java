@@ -41,7 +41,7 @@ public class Main extends Application {
     @Override
     public void start(Stage primaryStage) throws Exception {
 
-        primaryStage.getIcons().add( new Image(Objects.requireNonNull(getClass().getResourceAsStream("/assets/icon.png"))));
+        primaryStage.getIcons().addAll( new Image(Objects.requireNonNull(getClass().getResourceAsStream("/assets/icon-white.png"))));
         try {
             hostServices = getHostServices();
             ApiUtils au = new ApiUtils();
