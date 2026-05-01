@@ -1,29 +1,57 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import java.lang.*?>
-<?import java.util.*?>
-<?import javafx.scene.*?>
+<?import javafx.geometry.Insets?>
 <?import javafx.scene.control.*?>
-<?import javafx.scene.layout.*?>
-
 <?import javafx.scene.image.ImageView?>
-<?import javafx.scene.image.Image?>
-<AnchorPane xmlns="http://javafx.com/javafx"
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.Font?>
+
+<BorderPane xmlns="http://javafx.com/javafx"
             xmlns:fx="http://javafx.com/fxml"
             fx:controller="com.frameLab.frameSprite.controller.MainPageController"
-            prefHeight="400.0" prefWidth="600.0">
+            prefHeight="500.0" prefWidth="700.0">
 
+    <top>
+        <HBox alignment="CENTER_LEFT" spacing="20.0" BorderPane.alignment="CENTER">
+            <padding>
+                <Insets bottom="15.0" left="25.0" right="25.0" top="15.0" />
+            </padding>
 
-    <HBox spacing="20.0">
-        <VBox spacing="20.0">
-            <Label fx:id="helloLabel">Hello</Label>
-            <Button fx:id="logOutButton" onAction="#handleLogOut">Log Out</Button>
+            <Label fx:id="helloLabel" text="Hello">
+                <font>
+                    <Font name="Roboto Bold" size="14.0" />
+                </font>
+            </Label>
+
+            <Region HBox.hgrow="ALWAYS" />
+
+            <Button fx:id="logOutButton" onAction="#handleLogOut" text="Log Out" prefHeight="30.0" />
+        </HBox>
+    </top>
+
+    <center>
+        <VBox alignment="CENTER" spacing="25.0" BorderPane.alignment="CENTER">
+            <padding>
+                <Insets bottom="30.0" left="20.0" right="20.0" top="10.0" />
+            </padding>
+
+            <Label fx:id="currentChallengeLabel" text="No challenges for now" textAlignment="CENTER" wrapText="true">
+                <font>
+                    <Font name="Roboto Bold" size="22.0" />
+                </font>
+            </Label>
+
+            <StackPane maxHeight="400.0" maxWidth="400.0">
+                <ImageView fx:id="currentChallengeImage" fitHeight="350.0" fitWidth="350.0" pickOnBounds="true" preserveRatio="true" />
+            </StackPane>
+
+            <Button fx:id="projectsButton" defaultButton="true" onAction="#handleProjects" prefHeight="45.0" prefWidth="250.0" text="Try the challenge !">
+                <font>
+                    <Font name="Roboto Bold" size="15.0" />
+                </font>
+            </Button>
+
         </VBox>
-        <VBox>
-            <Label fx:id="currentChallengeLabel"> No challenges for now</Label>
-            <ImageView fx:id="currentChallengeImage" fitHeight="400" fitWidth="400" pickOnBounds="true" preserveRatio="true">
-            </ImageView>
-            <Button fx:id="projectsButton" onAction="#handleProjects">Try the challenge !</Button>
-        </VBox>
-    </HBox>
-</AnchorPane>
+    </center>
+
+</BorderPane>

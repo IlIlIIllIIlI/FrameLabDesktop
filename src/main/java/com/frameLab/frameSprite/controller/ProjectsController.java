@@ -40,57 +40,21 @@ public class ProjectsController {
     }
 
     private void loadProjects() throws Exception {
-        List<Project> projects = projectsService.getProjectsByUserAndChallenge(cache.getUser().getId(),cache.getChallenge().getId());
-        if (projects == null|| projects.isEmpty()) {
+        List<Project> projects = projectsService.getProjectsByUserAndChallenge(cache.getUser().getId(), cache.getChallenge().getId());
+        if (projects == null || projects.isEmpty()) {
             Label label = new Label("You don't have any projects for this challenge, start now !");
             projectsBox.getChildren().add(label);
         } else {
-            for(Project project : projects){
-                HBox projectBox = new HBox();
-                projectBox.setSpacing(20.0);
-                projectBox.setOnMouseClicked(e -> {
-                    try {
-                        projectsService.loadProject(project);
-                        handleLoad(project);
-                    } catch (IOException ex) {
-                        throw new RuntimeException(ex);
-                    }
-                });
+            for (Project project : projects) {
+                FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/projects-item.fxml"));
+                HBox projectItem = loader.load();
 
-                ImageView projectView = new ImageView();
-                try {
-                    Image image = new Image(project.getImageUrl(), true);
-                    projectView.setImage(image);
-                } catch (Exception e) {
-                    throw new Exception(e);
-                }
-                Label label = new Label(project.getTitle());
+                ProjectsItemController itemController = loader.getController();
+                itemController.initData(project, this);
 
-                Button deleteBtn = new Button("Delete");
-                deleteBtn.setOnAction(e -> {
-                    e.consume();
-
-                    Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
-                    confirm.setTitle("Delete Project");
-                    confirm.setHeaderText("Are you sure you want to delete '" + project.getTitle() + "'?");
-                    confirm.setContentText("This action cannot be undone.");
-
-                    confirm.showAndWait().ifPresent(response -> {
-                        if (response == ButtonType.OK) {
-                            try {
-                                projectsService.deleteProject(project);
-                                projectsBox.getChildren().remove(projectBox);
-                            } catch (IOException ex) {
-                                log.error("Failed to delete project", ex);
-                            }
-                        }
-                    });
-                });
-
-                projectBox.getChildren().addAll(label,projectView,deleteBtn);
+                projectsBox.getChildren().add(projectItem);
 
 
-                projectsBox.getChildren().add(projectBox);
             }
         }
     }
@@ -121,7 +85,7 @@ public class ProjectsController {
 
     }
 
-    private void handleLoad(Project project) throws IOException {
+    public void handleLoad(Project project) throws IOException {
         FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/editor-view.fxml"));
         Parent root = loader.load();
         EditorController editorController = loader.getController();
@@ -198,5 +162,9 @@ public class ProjectsController {
             }
         });
 
+    }
+
+    public void removeProjectUI(javafx.scene.Node node) {
+        projectsBox.getChildren().remove(node);
     }
 }

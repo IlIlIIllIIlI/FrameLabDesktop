@@ -1,25 +1,57 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import java.lang.*?>
-<?import java.util.*?>
-<?import javafx.scene.*?>
+<?import javafx.geometry.Insets?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
+<?import javafx.scene.text.Font?>
 
-<AnchorPane xmlns="http://javafx.com/javafx"
+<BorderPane xmlns="http://javafx.com/javafx"
             xmlns:fx="http://javafx.com/fxml"
             fx:controller="com.frameLab.frameSprite.controller.ProjectsController"
-            prefHeight="400.0" prefWidth="600.0">
+            prefHeight="500.0" prefWidth="700.0">
 
-    <HBox spacing="20.0">
-    <Button onAction="#handleGoBack">Go back</Button>
-        <VBox spacing="20.0" fx:id="projectsBox">
-            <Label> Your projects for this challenge : </Label>
-        </VBox>
-        <Label> New Project ?  </Label>
-        <Button onAction="#handleNew">Start a new project</Button>
+    <top>
+        <HBox alignment="CENTER_LEFT" spacing="15.0" BorderPane.alignment="CENTER">
+            <padding>
+                <Insets bottom="15.0" left="20.0" right="20.0" top="15.0" />
+            </padding>
 
-        <Label> Got a Backup ? </Label>
-        <Button onAction="#handleImport">Import Project</Button>
-    </HBox>
-</AnchorPane>
+            <Button onAction="#handleGoBack" text="← Go Back" />
+
+            <Label text="Challenge Projects">
+                <font>
+                    <Font name="System Bold" size="18.0" />
+                </font>
+                <HBox.margin>
+                    <Insets left="10.0" />
+                </HBox.margin>
+            </Label>
+
+            <Region HBox.hgrow="ALWAYS" />
+
+            <Button onAction="#handleImport" text="Import Backup" />
+            <Button defaultButton="true" onAction="#handleNew" text="+ New Project" prefHeight="30.0" />
+        </HBox>
+    </top>
+
+    <center>
+        <ScrollPane fitToWidth="true" BorderPane.alignment="CENTER">
+
+            <VBox fx:id="projectsBox" spacing="15.0">
+                <padding>
+                    <Insets bottom="20.0" left="40.0" right="40.0" top="10.0" />
+                </padding>
+
+                <Label text="Your active projects for this challenge:" textFill="#555555">
+                    <font>
+                        <Font size="14.0" />
+                    </font>
+                    <VBox.margin>
+                        <Insets bottom="10.0" />
+                    </VBox.margin>
+                </Label>
+            </VBox>
+        </ScrollPane>
+    </center>
+
+</BorderPane>

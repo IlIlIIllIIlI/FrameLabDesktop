@@ -75,6 +75,7 @@ public class EditorController {
     private ObservableList<SpriteLayer> layerListModel;
 
     private ProjectsService projectsService;
+
     public void initialize(){
         this.historyService = new HistoryService();
         this.projectsService = new ProjectsService();
