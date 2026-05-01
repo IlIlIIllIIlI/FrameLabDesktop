@@ -40,8 +40,8 @@ public class Main extends Application {
 
     @Override
     public void start(Stage primaryStage) throws Exception {
-        SVGImage icon = SVGLoader.load(Objects.requireNonNull(getClass().getResource("/assets/icon.svg")));
-        primaryStage.getIcons().add(icon.toImage());
+
+        primaryStage.getIcons().add( new Image(Objects.requireNonNull(getClass().getResourceAsStream("/assets/icon.svg"))));
         try {
             hostServices = getHostServices();
             ApiUtils au = new ApiUtils();
