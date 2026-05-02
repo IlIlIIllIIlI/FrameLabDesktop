@@ -84,6 +84,8 @@ public class EditorController {
                 this.handleApplyRotate(next.intValue());
             }
         });
+
+
     }
 
     public void initData(Project project){
@@ -95,7 +97,14 @@ public class EditorController {
 
         if (project.getLayers().isEmpty()){
             loadChallengeBackground();
+        } else {
+            // If an old project was saved bottom-up, reverse it so top is foreground.
+            SpriteLayer firstLayer = project.getLayers().getFirst();
+            if (firstLayer.getName() != null && firstLayer.getName().equals("Challenge_Background") && project.getLayers().size() > 1) {
+                Collections.reverse(project.getLayers());
+            }
         }
+
         this.layerListModel = FXCollections.observableList(project.getLayers());
 
         layerListView.setItems(layerListModel);
@@ -138,8 +147,6 @@ public class EditorController {
 
         loadImage();
 
-        colorPicker.setValue(Color.BLACK);
-        widthSlider.setValue(5.0);
         layerListView.getSelectionModel().selectFirst();
 
         drawing();
@@ -427,17 +434,17 @@ public class EditorController {
     private void loadImage(){
         canvasContainer.getChildren().clear();
 
-        for (SpriteLayer layer : currentProject.getLayers()){
+        // Changed for loop signature in order to reverse the list for a good layer rendering order
+        for (int i = layerListModel.size() - 1; i >= 0; i--) {
+            SpriteLayer layer = layerListModel.get(i);
             Canvas canvas = new Canvas(800,600);
-            canvas.setId(layer.name);
+            canvas.setId(layer.getName());
             canvas.setOpacity(layer.getOpacity());
             canvas.setVisible(layer.isVisible());
-            if (layer.image != null) {
-                canvas.getGraphicsContext2D().drawImage(layer.image, 0, 0);
+            if (layer.getImage() != null) {
+                canvas.getGraphicsContext2D().drawImage(layer.getImage(), 0, 0);
             }
-
             canvasContainer.getChildren().add(canvas);
-
         }
     }
 
@@ -577,8 +584,9 @@ public class EditorController {
             }
         }
 
-        layerListModel.add(newLayer);
+        layerListModel.addFirst(newLayer);
         canvasContainer.getChildren().add(newCanvas);
+        syncCanvasOrder();
         layerListView.getSelectionModel().select(newLayer);
     }
 
@@ -586,7 +594,7 @@ public class EditorController {
     private  void handleDeleteLayer(ActionEvent actionEvent) {
         SpriteLayer selected = layerListView.getSelectionModel().getSelectedItem();
         int selectedIndex = layerListView.getSelectionModel().getSelectedIndex();
-        if (selectedIndex == 0) {
+        if (selectedIndex == layerListModel.size() - 1) {
             return;
         }
         if (selected != null && layerListModel.size() > 1) {
@@ -594,6 +602,8 @@ public class EditorController {
 
             canvasContainer.getChildren().removeIf(node -> node.getId() != null &&
                     node.getId().equals(selected.name));
+
+            syncCanvasOrder();
 
             if (!layerListModel.isEmpty()) {
                 layerListView.getSelectionModel().selectLast();
@@ -604,15 +614,13 @@ public class EditorController {
     @FXML
     private  void handleLayerUp(ActionEvent actionEvent) {
         int selected = layerListView.getSelectionModel().getSelectedIndex();
-        if (selected <1 || selected >= layerListModel.size() -1 ) {
+        if (selected < 1) {
             return;
         }
         int next = selected -1;
 
         Collections.swap(layerListModel,selected,next);
-        Node temp = canvasContainer.getChildren().remove(selected);
-        canvasContainer.getChildren().add(next,temp);
-
+        syncCanvasOrder();
         layerListView.getSelectionModel().select(next);
     }
 
@@ -625,35 +633,28 @@ public class EditorController {
         int next = selected +1;
 
         Collections.swap(layerListModel,selected,next);
-        Node temp = canvasContainer.getChildren().remove(selected);
-        canvasContainer.getChildren().add(next,temp);
+        syncCanvasOrder();
         layerListView.getSelectionModel().select(next);
     }
 
     public void updateLayerVisibility(String layerName, boolean isVisible) {
-        for (Node node : canvasContainer.getChildren()) {
-            if (node instanceof Canvas && layerName.equals(node.getId())) {
-                node.setVisible(isVisible);
-                return;
-            }
+        Canvas canvas = getCanvasForLayer(layerName);
+        if (canvas != null) {
+            canvas.setVisible(isVisible);
         }
     }
 
     public void updateLayerOpacity(String layerName, double opacity) {
-        for (Node node : canvasContainer.getChildren()) {
-            if (node instanceof Canvas && layerName.equals(node.getId())) {
-                node.setOpacity(opacity);
-                return;
-            }
+        Canvas canvas = getCanvasForLayer(layerName);
+        if (canvas != null) {
+            canvas.setOpacity(opacity);
         }
     }
 
     public void renameCanvasLayer(String oldName, String newName){
-        for (Node node: canvasContainer.getChildren()){
-            if (node instanceof Canvas && Objects.equals(oldName, node.getId())){
-                node.setId(newName);
-                return;
-            }
+        Canvas canvas = getCanvasForLayer(oldName);
+        if (canvas != null) {
+            canvas.setId(newName);
         }
     }
 
@@ -661,45 +662,34 @@ public class EditorController {
     private void handleMerge(ActionEvent actionEvent) {
         int selected = layerListView.getSelectionModel().getSelectedIndex();
 
-        int bottom = selected -1;
+        int bottom = selected + 1;
 
-        if (bottom < 0 ) return;
-
+        if (bottom >= layerListModel.size()) return;
 
         SpriteLayer topLayer = layerListModel.get(selected);
         SpriteLayer bottomLayer = layerListModel.get(bottom);
 
-        Canvas bottomCanvas = (Canvas) canvasContainer.getChildren().get(bottom);
-        Canvas topCanvas = (Canvas) canvasContainer.getChildren().get(selected);
-
-        double topOpacity = topCanvas.getOpacity();
-        double botOpacity = bottomCanvas.getOpacity();
+        Canvas topCanvas = getCanvasForLayer(topLayer.getName());
+        Canvas bottomCanvas = getCanvasForLayer(bottomLayer.getName());
+        if (topCanvas == null || bottomCanvas == null) return;
 
         SnapshotParameters parameters = new SnapshotParameters();
         parameters.setFill(Color.TRANSPARENT);
 
-        topCanvas.setOpacity(1.0);
-        bottomCanvas.setOpacity(1.0);
-
-        topLayer.setImage(topCanvas.snapshot(parameters,null));
-        bottomLayer.setImage(bottomCanvas.snapshot(parameters,null));
-
-        topCanvas.setOpacity(topOpacity);
-        bottomCanvas.setOpacity(botOpacity);
-
-        Canvas tempCanvas = new Canvas(currentCanvas.getWidth(),currentCanvas.getHeight());
+        Canvas tempCanvas = new Canvas(topCanvas.getWidth(), topCanvas.getHeight());
         GraphicsContext gc = tempCanvas.getGraphicsContext2D();
+
         if (bottomLayer.isVisible() && bottomLayer.getImage() != null){
             gc.setGlobalAlpha(1.0);
-            gc.drawImage(bottomLayer.getImage(),0,0);
+            gc.drawImage(bottomLayer.getImage(), 0, 0);
         }
 
         if (topLayer.isVisible() && topLayer.getImage() != null){
             gc.setGlobalAlpha(1.0);
-            gc.drawImage(topLayer.getImage(),0,0);
+            gc.drawImage(topLayer.getImage(), 0, 0);
         }
 
-        WritableImage mergedImage = tempCanvas.snapshot(parameters,null);
+        WritableImage mergedImage = tempCanvas.snapshot(parameters, null);
 
         bottomLayer.setImage(mergedImage);
         bottomLayer.setOpacity(1.0);
@@ -709,13 +699,14 @@ public class EditorController {
         bottomCanvas.setVisible(true);
 
         GraphicsContext bottomgc = bottomCanvas.getGraphicsContext2D();
-        bottomgc.clearRect(0,0,bottomCanvas.getWidth(),bottomCanvas.getHeight());
-        bottomgc.drawImage(mergedImage,0,0);
+        bottomgc.clearRect(0, 0, bottomCanvas.getWidth(), bottomCanvas.getHeight());
+        bottomgc.drawImage(mergedImage, 0, 0);
 
         layerListModel.remove(selected);
-        canvasContainer.getChildren().remove(selected);
 
-        layerListView.getSelectionModel().select(bottom);
+        syncCanvasOrder();
+
+        layerListView.getSelectionModel().select(bottomLayer);
     }
 
     @FXML
@@ -818,8 +809,8 @@ public class EditorController {
 
         currentCanvas.setRotate(rotation);
     }
-
-    public void handleGoBack(ActionEvent actionEvent) {
+    @FXML
+    private void handleGoBack(ActionEvent actionEvent) {
         try {
             Stage stage = (Stage) widthSlider.getScene().getWindow();
             stage.setTitle("Projects");
@@ -828,7 +819,28 @@ public class EditorController {
             throw new RuntimeException(e);
         }
     }
-}
 
+    private Canvas getCanvasForLayer(String layerName) {
+        for (Node node : canvasContainer.getChildren()) {
+            if (node instanceof Canvas && layerName.equals(node.getId())) {
+                return (Canvas) node;
+            }
+        }
+        return null;
+    }
+
+    private void syncCanvasOrder() {
+        ObservableList<Node> newOrder = FXCollections.observableArrayList();
+        // Changed for loop signature in order to reverse the list
+        for (int i = layerListModel.size() - 1; i >= 0; i--) {
+            SpriteLayer layer = layerListModel.get(i);
+            Canvas canvas = getCanvasForLayer(layer.getName());
+            if (canvas != null) {
+                newOrder.add(canvas);
+            }
+        }
+        canvasContainer.getChildren().setAll(newOrder);
+    }
+}
 
 // @TODO ajustement globaux, TDD

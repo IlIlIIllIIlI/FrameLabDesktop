@@ -7,16 +7,24 @@
 <?import javafx.scene.layout.*?>
 
 <?import javafx.scene.image.ImageView?>
+<?import javafx.geometry.Insets?>
 <HBox xmlns="http://javafx.com/javafx"
       xmlns:fx="http://javafx.com/fxml"
       fx:controller="com.frameLab.frameSprite.controller.LayerController"
-      style="fx-padding: 5px;">
+      stylesheets="@../css/layer-item.css"
+      styleClass="layer-item"
+      spacing="10"
+      alignment="CENTER_LEFT">
 
-        <ImageView fx:id="layerPreview" fitHeight="100" fitWidth="100" pickOnBounds="true" preserveRatio="true"/>
+        <CheckBox fx:id="visibleToggle" onAction="#handleVisibility" selected="true" styleClass="layer-visibility-toggle" />
 
-        <CheckBox fx:id="visibleToggle" onAction="#handleVisibility" selected="true"/>
+        <StackPane styleClass="layer-thumbnail-container">
+                <ImageView fx:id="layerPreview" fitHeight="34" fitWidth="34" preserveRatio="true"/>
+        </StackPane>
 
-        <Label fx:id="layerName"/>
+        <Label fx:id="layerName" styleClass="layer-name-label"
+               HBox.hgrow="ALWAYS" maxWidth="Infinity" minWidth="20" prefWidth="10"
+               text="Layer Name" />
+        <Slider fx:id="opacitySlider" styleClass="layer-opacity-slider" max="1.0" value="1.0" minWidth="60" prefWidth="70" />
 
-        <Slider fx:id="opacitySlider"  max="1.0" value="1.0"/>
 </HBox>

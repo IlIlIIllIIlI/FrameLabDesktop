@@ -25,6 +25,8 @@ import java.util.Properties;
 
 public class MainPageController {
     @FXML
+    private Button themeToggle;
+    @FXML
     private Button projectsButton;
     @FXML
     private Label currentChallengeLabel;
@@ -111,5 +113,10 @@ public class MainPageController {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    @FXML
+    private void handleTheme(ActionEvent actionEvent) {
+        themeToggle.setText(Main.changeTheme());
     }
 }

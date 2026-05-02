@@ -1,82 +1,111 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-
+<?import javafx.geometry.Insets?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
+<?import javafx.scene.paint.Color?>
 <?import javafx.scene.shape.Circle?>
-<AnchorPane xmlns="http://javafx.com/javafx"
+<?import javafx.scene.text.Font?>
+
+<BorderPane xmlns="http://javafx.com/javafx"
             xmlns:fx="http://javafx.com/fxml"
             fx:controller="com.frameLab.frameSprite.controller.EditorController"
-            prefHeight="400.0" prefWidth="600.0" >
-    <VBox spacing="40.0">
-        <HBox>
-            <Button onAction="#handleGoBack">Go back</Button>
-            <Button onAction="#handleSave">Save</Button>
-            <Button onAction="#handleExport">Export</Button>
-            <Button onAction="#handleUndo">Undo</Button>
-            <Button onAction="#handleRedo">Redo</Button>
+            stylesheets="@../css/editor-view.css"
+            styleClass="editor-root"
+            prefHeight="700.0" prefWidth="1000.0">
 
-            <MenuButton text="Filters">
-                <items>
-                    <MenuItem text="Black &amp; White" onAction="#handleApplyGrayscale"/>
-                    <MenuItem text="Sepia" onAction="#handleApplySepia"/>
-                    <MenuItem text="Sharpen" onAction="#handleApplySharpen"/>
-                    <MenuItem text="Blur" onAction="#handleApplyBlur"/>
-                    <MenuItem text="Gaussian Blur" onAction="#handleApplyGaussianBlur"/>
-                    <MenuItem text="Edge" onAction="#handleApplyEdge"/>
-                    <MenuItem text="Reflect" onAction="#handleApplyReflect"/>
-                    <MenuItem text="Vertical Reflect" onAction="#handleApplyVerticalReflect"/>
+    <top>
+        <VBox BorderPane.alignment="CENTER">
+            <ToolBar styleClass="editor-toolbar">
+                <Button styleClass="editor-button" onAction="#handleGoBack" text="← Menu" />
+                <Separator styleClass="editor-separator" />
+                <Button styleClass="editor-button" onAction="#handleSave" text="Save" />
+                <Button styleClass="editor-button" onAction="#handleExport" text="Export" />
+                <Separator styleClass="editor-separator" />
+                <Button styleClass="editor-button" onAction="#handleUndo" text="Undo (Ctrl+Z)" />
+                <Button styleClass="editor-button" onAction="#handleRedo" text="Redo (Ctrl+Shift+Z)" />
+            </ToolBar>
 
+            <ToolBar styleClass="editor-toolbar">
+                <Label styleClass="editor-label" text="Color:" />
+                <ColorPicker fx:id="colorPicker" styleClass="editor-color-picker">
+                    <value>
+                        <Color fx:constant="BLACK" />
+                    </value>
+                </ColorPicker>
 
+                <Separator styleClass="editor-separator" />
+                <ToggleButton fx:id="eraserToggle" styleClass="editor-toggle" text="Eraser" />
+                <Separator styleClass="editor-separator" />
 
-                </items>
-            </MenuButton>
+                <Label styleClass="editor-label" text="Size:" />
+                <Slider fx:id="widthSlider" styleClass="editor-slider" min="1" max="50" value="5.0" prefWidth="100" />
 
+                <Separator styleClass="editor-separator" />
 
-            <Label>Color :</Label>
-            <ColorPicker fx:id="colorPicker"/>
-            <ToggleButton fx:id="eraserToggle" text="Eraser" />
-            <Label>Width : </Label>
-            <Slider fx:id="widthSlider" min="1" max="50"/>
-            <Label>Rotate : </Label>
-            <Slider fx:id="rotateSlider" max="360"/>
+                <MenuButton styleClass="editor-menu" text="Image Filters">
+                    <items>
+                        <MenuItem onAction="#handleApplyGrayscale" text="Black &amp; White" />
+                        <MenuItem onAction="#handleApplySepia" text="Sepia" />
+                        <MenuItem onAction="#handleApplySharpen" text="Sharpen" />
+                        <MenuItem onAction="#handleApplyBlur" text="Blur" />
+                        <MenuItem onAction="#handleApplyGaussianBlur" text="Gaussian Blur" />
+                        <MenuItem onAction="#handleApplyEdge" text="Edge Detection" />
+                        <MenuItem onAction="#handleApplyReflect" text="Horizontal Reflect" />
+                        <MenuItem onAction="#handleApplyVerticalReflect" text="Vertical Reflect" />
+                    </items>
+                </MenuButton>
 
-        </HBox>
-        <HBox>
-            <Label>Brightness : </Label>
-            <Slider fx:id="brightnessSlider" min="-255" max="255"/>
-            <Button onAction="#handleApplyBrightness">Apply Brightness</Button>
-        </HBox>
+                <Separator styleClass="editor-separator" />
 
-        <StackPane>
+                <Label styleClass="editor-label" text="Rotate:" />
+                <Slider fx:id="rotateSlider" styleClass="editor-slider" max="360" prefWidth="80" />
 
-            <StackPane fx:id="canvasContainer" prefHeight="600.0" prefWidth="800.0">
+                <Label styleClass="editor-label" text="Bright:" />
+                <Slider fx:id="brightnessSlider" styleClass="editor-slider" max="255" min="-255" prefWidth="80" />
+                <Button styleClass="editor-button" onAction="#handleApplyBrightness" text="Apply" />
+            </ToolBar>
+        </VBox>
+    </top>
 
-            </StackPane>
-
-            <StackPane fx:id="uiOverlay" prefHeight="600.0" prefWidth="800.0" maxHeight="600.0" maxWidth="800.0" mouseTransparent="true">
-                <Circle fx:id="brushCursor"
-                        fill="TRANSPARENT"
-                        stroke="WHITE"
-                        strokeWidth="1.5"
-                        mouseTransparent="true"
-                        visible="false"/>
+    <center>
+        <StackPane styleClass="editor-workspace" BorderPane.alignment="CENTER">
+            <StackPane maxHeight="600.0" maxWidth="800.0">
+                <StackPane fx:id="canvasContainer" prefHeight="600.0" prefWidth="800.0" />
+                <StackPane fx:id="uiOverlay" maxHeight="600.0" maxWidth="800.0" prefHeight="600.0" prefWidth="800.0" mouseTransparent="true">
+                    <Circle fx:id="brushCursor" fill="TRANSPARENT" mouseTransparent="true" stroke="BLACK" strokeWidth="1.5" visible="false" />
+                </StackPane>
             </StackPane>
         </StackPane>
+    </center>
 
-        <VBox spacing="5.0">
-            <Label>Layers</Label>
+    <right>
+        <VBox styleClass="editor-sidebar" prefWidth="280.0" minWidth="280.0" maxWidth="280.0" spacing="5.0" BorderPane.alignment="CENTER">
+            <padding>
+                <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+            </padding>
 
-            <HBox spacing="5.0">
-                <Button onAction="#handleAddLayer">+</Button>
-                <Button onAction="#handleDeleteLayer">-</Button>
-                <Button onAction="#handleLayerUp">▲</Button>
-                <Button onAction="#handleLayerDown">▼</Button>
-                <Button onAction="#handleMerge">Merge</Button>
-            </HBox>
+            <Label styleClass="editor-section-title" text="Layers">
+                <font>
+                    <Font name="Roboto Bold" size="14.0" />
+                </font>
+                <VBox.margin>
+                    <Insets bottom="5.0" />
+                </VBox.margin>
+            </Label>
 
-            <ListView fx:id="layerListView" VBox.vgrow="ALWAYS"/>
+            <ToolBar styleClass="editor-layer-toolbar">
+                <Button styleClass="editor-button" onAction="#handleAddLayer" text="+" />
+                <Button styleClass="editor-button" onAction="#handleDeleteLayer" text="-" />
+                <Separator styleClass="editor-separator" />
+                <Button styleClass="editor-button" onAction="#handleLayerUp" text="▲" />
+                <Button styleClass="editor-button" onAction="#handleLayerDown" text="▼" />
+                <Separator styleClass="editor-separator" />
+                <Button styleClass="editor-button" onAction="#handleMerge" text="Merge Down" />
+            </ToolBar>
 
+            <ListView fx:id="layerListView" VBox.vgrow="ALWAYS" />
         </VBox>
-    </VBox>
-</AnchorPane>
+    </right>
+
+</BorderPane>

@@ -1,5 +1,9 @@
 package com.frameLab.frameSprite;
 
+import atlantafx.base.theme.NordDark;
+import atlantafx.base.theme.NordLight;
+import atlantafx.base.theme.PrimerDark;
+import atlantafx.base.theme.PrimerLight;
 import com.frameLab.frameSprite.controller.LoginController;
 import com.frameLab.frameSprite.controller.MainPageController;
 import com.frameLab.frameSprite.utils.ApiUtils;
@@ -40,6 +44,7 @@ public class Main extends Application {
 
     @Override
     public void start(Stage primaryStage) throws Exception {
+        Application.setUserAgentStylesheet(new NordDark().getUserAgentStylesheet());
 
         primaryStage.getIcons().addAll( new Image(Objects.requireNonNull(getClass().getResourceAsStream("/assets/icon-white.png"))));
         try {
@@ -91,6 +96,15 @@ public class Main extends Application {
         return conn;
     }
 
+    public static String changeTheme(){
+        if (Objects.equals(Application.getUserAgentStylesheet(), "/atlantafx/base/theme/nord-light.css")) {
+            Application.setUserAgentStylesheet(new NordDark().getUserAgentStylesheet());
+            return "Light Mode";
+        } else {
+            Application.setUserAgentStylesheet(new NordLight().getUserAgentStylesheet());
+            return "Dark Mode";
+        }
+    }
     public static void openWebsite(String url){
        hostServices.showDocument(url);
     }

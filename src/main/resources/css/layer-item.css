@@ -1,0 +1,12 @@
+.layer-item {
+    -fx-padding: 8 12 8 8;
+}
+
+.layer-thumbnail-container {
+    -fx-border-width: 1;
+    -fx-min-width: 36px;
+    -fx-min-height: 36px;
+    -fx-max-width: 36px;
+    -fx-max-height: 36px;
+
+}

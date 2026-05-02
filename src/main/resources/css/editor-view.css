@@ -1,0 +1,9 @@
+.editor-sidebar {
+    -fx-border-width: 0 0 0 1px;
+}
+
+.list-view .scroll-bar:horizontal{
+    -fx-opacity: 0;
+    -fx-max-height: 0;
+    -fx-padding: 0;
+}

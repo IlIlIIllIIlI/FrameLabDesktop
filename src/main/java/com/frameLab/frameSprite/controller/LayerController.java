@@ -3,12 +3,10 @@ package com.frameLab.frameSprite.controller;
 import com.frameLab.frameSprite.Sprites.SpriteLayer;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
-import javafx.scene.control.CheckBox;
-import javafx.scene.control.Label;
-import javafx.scene.control.Slider;
-import javafx.scene.control.TextInputDialog;
+import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.util.Duration;
 
 import java.util.Objects;
 
@@ -36,7 +34,10 @@ public class LayerController {
         });
 
 
-
+        Tooltip renameHint = new Tooltip("Double-click to rename layer");
+        renameHint.setShowDelay(Duration.millis(300));
+        layerName.setTooltip(renameHint);
+        layerName.setStyle("-fx-cursor: hand;");
     }
 
     @FXML
