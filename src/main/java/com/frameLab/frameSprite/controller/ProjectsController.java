@@ -3,6 +3,7 @@ package com.frameLab.frameSprite.controller;
 import com.frameLab.frameSprite.Main;
 import com.frameLab.frameSprite.dao.ProjectDAO;
 import com.frameLab.frameSprite.model.Project;
+import com.frameLab.frameSprite.model.User;
 import com.frameLab.frameSprite.service.ProjectsService;
 import com.frameLab.frameSprite.service.StorageService;
 import com.frameLab.frameSprite.utils.SessionUtils;
@@ -140,12 +141,18 @@ public class ProjectsController {
                 importedProject.setWidth(800);
                 importedProject.setHeight(600);
 
-                ProjectDAO projectDAO = new ProjectDAO();
-                projectDAO.save(importedProject);
-
+                projectsService.saveProject(importedProject);
 
                 StorageService storageService = new StorageService();
                 storageService.importProjectFromZip(zipFile, importedProject.getId());
+
+                importedProject.setImageUrl(storageService.getPreviewPath(importedProject.getId()));
+
+                User userCache = SessionUtils.getInstance().getUser();
+                if (userCache != null && userCache.getProjects() != null) {
+                    userCache.getProjects().add(importedProject);
+                }
+
 
                 Alert alert = new Alert(Alert.AlertType.INFORMATION);
                 alert.setTitle("Import Successful");
@@ -157,6 +164,7 @@ public class ProjectsController {
                 if (projectsBox.getChildren().size() > 1) {
                     projectsBox.getChildren().remove(1, projectsBox.getChildren().size());
                 }
+
                 loadProjects();
 
             } catch (Exception e) {

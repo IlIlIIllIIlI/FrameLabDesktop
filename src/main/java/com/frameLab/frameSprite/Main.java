@@ -2,12 +2,9 @@ package com.frameLab.frameSprite;
 
 import atlantafx.base.theme.NordDark;
 import atlantafx.base.theme.NordLight;
-import atlantafx.base.theme.PrimerDark;
-import atlantafx.base.theme.PrimerLight;
 import com.frameLab.frameSprite.controller.LoginController;
 import com.frameLab.frameSprite.controller.MainPageController;
 import com.frameLab.frameSprite.utils.ApiUtils;
-import com.sun.javafx.application.HostServicesDelegate;
 import javafx.application.Application;
 import javafx.application.HostServices;
 import javafx.fxml.FXMLLoader;
@@ -16,8 +13,7 @@ import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.image.Image;
 import javafx.stage.Stage;
-import org.girod.javafx.svgimage.SVGImage;
-import org.girod.javafx.svgimage.SVGLoader;
+
 
 import java.io.IOException;
 import java.sql.Connection;

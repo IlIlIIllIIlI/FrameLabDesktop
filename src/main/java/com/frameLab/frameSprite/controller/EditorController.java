@@ -29,14 +29,14 @@ import javafx.scene.effect.ColorAdjust;
 import javafx.scene.effect.Effect;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.image.PixelWriter;
 import javafx.scene.image.WritableImage;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.StackPane;
-import javafx.scene.layout.VBox;
+import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
+import javafx.scene.paint.ImagePattern;
 import javafx.scene.shape.Circle;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
@@ -90,6 +90,8 @@ public class EditorController {
 
     public void initData(Project project){
         this.currentProject = project;
+
+        transparentGrid();
 
         if (project.getLayers()==null){
             project.setLayers(new ArrayList<>());
@@ -181,6 +183,7 @@ public class EditorController {
         uiOverlay.setCursor(Cursor.NONE);
 
         brushCursor.radiusProperty().bind(widthSlider.valueProperty().divide(2));
+        brushCursor.strokeProperty().bind(colorPicker.valueProperty());
 
         canvasContainer.addEventFilter(MouseEvent.MOUSE_MOVED, this::updateCursorPosition);
         canvasContainer.addEventFilter(MouseEvent.MOUSE_DRAGGED, this::updateCursorPosition);
@@ -284,8 +287,15 @@ public class EditorController {
 
         SnapshotParameters params = new SnapshotParameters();
         params.setFill(Color.TRANSPARENT);
+
+
+        Background checkerboard = canvasContainer.getBackground();
+
+        canvasContainer.setBackground(null);
+
         WritableImage previewImage = canvasContainer.snapshot(params, null);
 
+        canvasContainer.setBackground(checkerboard);
         ImageView previewView = new ImageView(previewImage);
         previewView.setFitWidth(400);
         previewView.setPreserveRatio(true);
@@ -840,6 +850,32 @@ public class EditorController {
             }
         }
         canvasContainer.getChildren().setAll(newOrder);
+    }
+
+    private void transparentGrid(){
+        int squareSize = 30;
+
+        WritableImage patternImage = new WritableImage(squareSize * 2, squareSize * 2);
+        PixelWriter writer = patternImage.getPixelWriter();
+
+        Color color1 = Color.TRANSPARENT;
+        Color color2 = Color.color(0, 0, 0, 0.15);
+
+        for (int x = 0; x < squareSize * 2; x++) {
+            for (int y = 0; y < squareSize * 2; y++) {
+
+                boolean isLight = ((x / squareSize) + (y / squareSize)) % 2 == 0;
+                writer.setColor(x, y, isLight ? color1 : color2);
+            }
+        }
+
+        ImagePattern checkerboard = new ImagePattern(
+                patternImage, 0, 0, squareSize * 2, squareSize * 2, false
+        );
+
+        canvasContainer.setBackground(new Background(new BackgroundFill(checkerboard, null, null)));
+
+
     }
 }
 
