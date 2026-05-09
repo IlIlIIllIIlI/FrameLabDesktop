@@ -7,3 +7,9 @@
     -fx-max-height: 0;
     -fx-padding: 0;
 }
+
+.hidden-scrollbars .scroll-bar:horizontal,
+.hidden-scrollbars .scroll-bar:vertical {
+    -fx-opacity: 0;
+    -fx-mouse-transparent: true;
+}

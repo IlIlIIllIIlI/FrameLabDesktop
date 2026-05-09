@@ -102,8 +102,9 @@ public class ProjectsController {
 
     public void handleGoBack(ActionEvent actionEvent) throws IOException {
         if (SessionUtils.getInstance().getUser().getId() == -1) {
+            SessionUtils.clearInstance();
             Stage stage = (Stage) projectsBox.getScene().getWindow();
-            stage.setTitle("Projects");
+            stage.setTitle("FrameSprite");
             Main.changeScene("/view/login-view.fxml");
         } else {
             try {

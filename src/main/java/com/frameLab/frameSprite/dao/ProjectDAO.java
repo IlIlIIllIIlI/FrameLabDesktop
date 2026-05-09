@@ -108,7 +108,7 @@ public class ProjectDAO {
             if (rs.next()) {
                 return Optional.of(new Project(
                         rs.getInt("id"),
-                        rs.getString("name")
+                        rs.getString("title")
                 ));
             }
             return Optional.empty();

@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import java.lang.*?>
+<?import java.util.*?>
+<?import javafx.scene.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<?import javafx.scene.image.ImageView?>
+<?import javafx.geometry.Insets?>
+<?import javax.print.DocFlavor.URL?>
+<BorderPane xmlns="http://javafx.com/javafx"
+            xmlns:fx="http://javafx.com/fxml"
+            fx:controller="com.frameLab.frameSprite.controller.PreviewController"
+            stylesheets="@../css/preview-item.css"
+            prefHeight="500.0" prefWidth="800.0">
+    <center>
+        <HBox alignment="CENTER" spacing="40.0" BorderPane.alignment="CENTER">
+            <padding>
+                <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
+            </padding>
+
+            <VBox alignment="CENTER" spacing="10.0">
+                <Label styleClass="preview-label" text="Original" />
+                <ImageView fx:id="originalImageView" fitWidth="350.0" preserveRatio="true" styleClass="preview-image" />
+            </VBox>
+
+            <VBox alignment="CENTER" spacing="10.0">
+                <Label styleClass="preview-label" text="Edited" />
+                <ImageView fx:id="editedImageView" fitWidth="350.0" preserveRatio="true" styleClass="preview-image" />
+            </VBox>
+
+        </HBox>
+    </center>
+
+    <bottom>
+        <HBox alignment="CENTER" BorderPane.alignment="CENTER">
+            <padding>
+                <Insets bottom="20.0" />
+            </padding>
+            <Button onAction="#handleClose" text="Close Preview" />
+        </HBox>
+    </bottom>
+
+</BorderPane>

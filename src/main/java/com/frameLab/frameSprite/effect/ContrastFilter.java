@@ -1,10 +1,12 @@
 package com.frameLab.frameSprite.effect;
 
-public class BrightnessFilter extends PixelFilter{
+public class ContrastFilter extends PixelFilter{
     int intensity;
+    double factor;
 
-    public BrightnessFilter(int intensity){
+    public ContrastFilter(int intensity){
         this.intensity = intensity;
+        this.factor = (259.0 * (intensity + 255.0)) / (255.0 * (259.0 - intensity));
     }
 
     @Override
@@ -19,15 +21,15 @@ public class BrightnessFilter extends PixelFilter{
         int green = (argb >> 8) & 0xFF;
         int blue = argb & 0xFF;
 
-        int finalRed = Math.clamp(red + this.intensity, 0, 255);
-        int finalGreen = Math.clamp(green + this.intensity, 0, 255);
-        int finalBlue = Math.clamp(blue + this.intensity, 0, 255);
+        int finalRed = Math.clamp((int)(factor * (red - 128) + 128), 0, 255);
+        int finalGreen = Math.clamp((int)(factor * (green - 128) + 128), 0, 255);
+        int finalBlue = Math.clamp((int)(factor * (blue - 128) + 128), 0, 255);
 
         return (alpha << 24) | (finalRed << 16) | (finalGreen << 8) | finalBlue;
     }
 
     @Override
     public String getName() {
-        return "Brightness";
+        return "Contrast";
     }
 }

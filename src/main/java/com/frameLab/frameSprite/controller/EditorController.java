@@ -3,7 +3,6 @@ package com.frameLab.frameSprite.controller;
 import com.frameLab.frameSprite.Main;
 import com.frameLab.frameSprite.Sprites.SpriteLayer;
 import com.frameLab.frameSprite.effect.*;
-import com.frameLab.frameSprite.model.Challenge;
 import com.frameLab.frameSprite.model.Project;
 import com.frameLab.frameSprite.service.HistoryService;
 import com.frameLab.frameSprite.service.ProjectsService;
@@ -17,6 +16,7 @@ import javafx.concurrent.Task;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
+import javafx.geometry.Bounds;
 import javafx.geometry.Point2D;
 import javafx.geometry.Pos;
 import javafx.scene.Cursor;
@@ -25,8 +25,6 @@ import javafx.scene.SnapshotParameters;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.*;
-import javafx.scene.effect.ColorAdjust;
-import javafx.scene.effect.Effect;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.image.PixelWriter;
@@ -34,18 +32,31 @@ import javafx.scene.image.WritableImage;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
+import javafx.scene.input.ScrollEvent;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.ImagePattern;
 import javafx.scene.shape.Circle;
+import javafx.scene.shape.Rectangle;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
 
 public class EditorController {
+    private static final Logger log = LoggerFactory.getLogger(EditorController.class);
+    @FXML
+    private Slider contrastSlider;
+    @FXML
+    private StackPane workspaceVoid;
+    @FXML
+    private ScrollPane scrollPane;
+    @FXML
+    private StackPane zoomContainer;
     @FXML
     private StackPane uiOverlay;
     @FXML
@@ -106,6 +117,8 @@ public class EditorController {
                 Collections.reverse(project.getLayers());
             }
         }
+
+        setupWorkspaceDimensions(currentProject.getWidth(), currentProject.getHeight());
 
         this.layerListModel = FXCollections.observableList(project.getLayers());
 
@@ -174,10 +187,78 @@ public class EditorController {
 
                         event.consume();
                     }
+
+                    if (event.isControlDown() && event.getCode() == KeyCode.E) {
+                        try {
+                            handleExport(new ActionEvent());
+                        } catch (IOException e) {
+                            new Alert(Alert.AlertType.ERROR, "Failed to Export file: " + e.getMessage()).showAndWait();
+                        }
+
+                        event.consume();
+                    }
+
+                    if (event.isControlDown()) {
+                        Bounds viewportBounds = scrollPane.getViewportBounds();
+                        double centerX = viewportBounds.getWidth() / 2.0;
+                        double centerY = viewportBounds.getHeight() / 2.0;
+
+                        if (event.getCode() == KeyCode.EQUALS || event.getCode() == KeyCode.ADD) {
+                            // Zoom In
+                            applyZoom(1.1, centerX, centerY);
+                            event.consume();
+                        }
+                        else if (event.getCode() == KeyCode.MINUS || event.getCode() == KeyCode.SUBTRACT) {
+                            // Zoom Out
+                            applyZoom(1 / 1.1, centerX, centerY);
+                            event.consume();
+                        }
+                        else if (event.getCode() == KeyCode.DIGIT0 || event.getCode() == KeyCode.NUMPAD0) {
+                            zoomContainer.setScaleX(1.0);
+                            zoomContainer.setScaleY(1.0);
+                            scrollPane.setHvalue(0.5);
+                            scrollPane.setVvalue(0.5);
+                            scrollPane.layout();
+                            event.consume();
+                        }
+                    }
                 });
+
+
             }
 
             });
+
+        scrollPane.addEventFilter(ScrollEvent.SCROLL, event -> {
+            if (event.isControlDown() && event.getDeltaY() != 0) {
+                event.consume();
+
+                double mouseX = event.getX();
+                double mouseY = event.getY();
+
+                if (event.getDeltaY() > 0) {
+                    applyZoom(1.1, mouseX, mouseY); // Zoom In
+                } else {
+                    applyZoom(1 / 1.1, mouseX, mouseY); // Zoom Out
+                }
+            } else {
+                // No scrolling
+                if (scrollPane.getStyleClass().contains("hidden-scrollbars")) {
+                    event.consume();
+                }
+                }
+        });
+
+        scrollPane.viewportBoundsProperty().addListener((obs, oldBounds, newBounds) -> {
+            updateScrollbarVisibility();
+        });
+
+
+
+        Rectangle clipRect = new Rectangle();
+        clipRect.widthProperty().bind(canvasContainer.widthProperty());
+        clipRect.heightProperty().bind(canvasContainer.heightProperty());
+        uiOverlay.setClip(clipRect);
 
         canvasContainer.setCursor(Cursor.NONE);
         uiOverlay.setCursor(Cursor.NONE);
@@ -191,6 +272,50 @@ public class EditorController {
         canvasContainer.addEventFilter(MouseEvent.MOUSE_ENTERED, e -> brushCursor.setVisible(true));
         canvasContainer.addEventFilter(MouseEvent.MOUSE_EXITED, e -> brushCursor.setVisible(false));
 
+        Platform.runLater(this::fitImageToScreen);
+
+
+    }
+
+    private void applyZoom(double multiplier, double mouseX, double mouseY) {
+        double oldScale = zoomContainer.getScaleX();
+        double newScale = oldScale * multiplier;
+
+        if (newScale < 0.1) newScale = 0.1;
+        if (newScale > 10.0) newScale = 10.0;
+        if (newScale == oldScale) return;
+
+        Point2D mouseInScene = scrollPane.localToScene(mouseX, mouseY);
+
+        Point2D mouseInCanvas = zoomContainer.sceneToLocal(mouseInScene);
+
+        zoomContainer.setScaleX(newScale);
+        zoomContainer.setScaleY(newScale);
+
+        scrollPane.layout();
+
+        Point2D newMouseInScene = zoomContainer.localToScene(mouseInCanvas);
+
+        double driftX = newMouseInScene.getX() - mouseInScene.getX();
+        double driftY = newMouseInScene.getY() - mouseInScene.getY();
+
+        Bounds viewport = scrollPane.getViewportBounds();
+        Bounds content = scrollPane.getContent().getBoundsInLocal();
+
+        double hRange = content.getWidth() - viewport.getWidth();
+        double vRange = content.getHeight() - viewport.getHeight();
+
+        if (hRange > 0) {
+            double currentScrollPx = scrollPane.getHvalue() * hRange;
+            scrollPane.setHvalue(Math.clamp((currentScrollPx + driftX) / hRange, 0, 1));
+        }
+
+        if (vRange > 0) {
+            double currentScrollPx = scrollPane.getVvalue() * vRange;
+            scrollPane.setVvalue(Math.clamp((currentScrollPx + driftY) / vRange, 0, 1));
+        }
+
+        updateScrollbarVisibility();
     }
 
     private void updateCursorPosition(MouseEvent e) {
@@ -206,29 +331,20 @@ public class EditorController {
             Image image = SessionUtils.getInstance().getChallengeImage();
 
 
-            int projectWidth = 800;
-            int projectHeight = 600;
+            int projectWidth = (int) image.getWidth();
+            int projectHeight = (int) image.getHeight();
+
             this.currentProject.setWidth(projectWidth);
             this.currentProject.setHeight(projectHeight);
 
-            double scaleX = (double) projectWidth / image.getWidth();
-            double scaleY = (double) projectHeight / image.getHeight();
-            double scale = Math.min(scaleX, scaleY);
+            Canvas bgCanvas = new Canvas(projectWidth, projectHeight);
+            GraphicsContext gc = bgCanvas.getGraphicsContext2D();
 
-            double finalWidth = image.getWidth() * scale;
-            double finalHeight = image.getHeight() * scale;
-
-            double x = (projectWidth - finalWidth) / 2;
-            double y = (projectHeight - finalHeight) / 2;
-
-            Canvas resizeCanvas = new Canvas(projectWidth, projectHeight);
-            GraphicsContext gc = resizeCanvas.getGraphicsContext2D();
-
-            gc.drawImage(image, x, y, finalWidth, finalHeight);
+            gc.drawImage(image, 0,0);
 
             SnapshotParameters params = new SnapshotParameters();
             params.setFill(Color.TRANSPARENT);
-            WritableImage scaledWritableImage = resizeCanvas.snapshot(params, null);
+            WritableImage scaledWritableImage = bgCanvas.snapshot(params, null);
 
             SpriteLayer bgLayer = new SpriteLayer("Challenge_Background", projectWidth, projectHeight);
             bgLayer.setImage(scaledWritableImage);
@@ -447,7 +563,7 @@ public class EditorController {
         // Changed for loop signature in order to reverse the list for a good layer rendering order
         for (int i = layerListModel.size() - 1; i >= 0; i--) {
             SpriteLayer layer = layerListModel.get(i);
-            Canvas canvas = new Canvas(800,600);
+            Canvas canvas = new Canvas(currentProject.getWidth(), currentProject.getHeight());
             canvas.setId(layer.getName());
             canvas.setOpacity(layer.getOpacity());
             canvas.setVisible(layer.isVisible());
@@ -806,6 +922,17 @@ public class EditorController {
     }
 
     @FXML
+    private void handleApplyContrast(ActionEvent actionEvent) {
+
+        if (currentCanvas == null) return;
+
+        FilterCommand command = new FilterCommand(currentCanvas, new ContrastFilter((int) contrastSlider.getValue()));
+
+        historyService.addCommand(command);
+
+    }
+
+    @FXML
     private void handleApplyBrightness(ActionEvent actionEvent) {
         if (currentCanvas == null) return;
 
@@ -819,6 +946,7 @@ public class EditorController {
 
         currentCanvas.setRotate(rotation);
     }
+
     @FXML
     private void handleGoBack(ActionEvent actionEvent) {
         try {
@@ -877,6 +1005,210 @@ public class EditorController {
 
 
     }
+
+    private long getFolderSize(File folder) {
+        long length = 0;
+        if (folder != null && folder.exists()) {
+            File[] files = folder.listFiles();
+            if (files != null) {
+                for (File file : files) {
+                    if (file.isFile()) {
+                        length += file.length();
+                    } else {
+                        length += getFolderSize(file);
+                    }
+                }
+            }
+        }
+        return length;
+    }
+
+    private String formatFileSize(long bytes) {
+        if (bytes < 1024) return bytes + " B";
+        int z = (63 - Long.numberOfLeadingZeros(bytes)) / 10;
+        return String.format("%.1f %sB", (double) bytes / (1L << (z * 10)), " KMGTPE".charAt(z));
+    }
+
+
+    @FXML
+    private void handleShowInfo(ActionEvent actionEvent) throws IOException {
+        if (currentProject == null) return;
+
+        try {
+            handleSave(new ActionEvent());
+        } catch (IOException e) {
+            System.out.printf(String.valueOf(e));
+        }
+
+        Alert infoAlert = new Alert(Alert.AlertType.INFORMATION);
+        infoAlert.setTitle("Project Details");
+        infoAlert.setHeaderText("Information for: " + (currentProject.getTitle() != null ? currentProject.getTitle() : "Untitled"));
+
+        int width = currentProject.getWidth();
+        int height = currentProject.getHeight();
+        int layerCount = layerListModel.size();
+
+        int gcd = getGCD(width, height);
+        String aspectRatio = (width / gcd) + ":" + (height / gcd);
+
+        File projectDir = new File("projects/" + currentProject.getId());
+        long sizeInBytes = getFolderSize(projectDir);
+        String readableSize = formatFileSize(sizeInBytes);
+
+        String lastModified = "Unknown";
+        if (projectDir.exists()) {
+            java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("MMM dd, yyyy - HH:mm");
+            lastModified = sdf.format(projectDir.lastModified());
+        }
+
+        String author = "Local Guest";
+        if (SessionUtils.getInstance().getUser() != null && SessionUtils.getInstance().getUser().getId() != -1) {
+            author = SessionUtils.getInstance().getUser().getFirstName();
+        }
+
+        String details = String.format(
+                        "Author:\t\t %s\n" +
+                        "Dimensions:\t %d x %d px  (%s)\n" +
+                        "Total Layers:\t %d\n\n" +
+                        "Disk Size:\t\t %s\n" +
+                        "Last Modified:\t %s\n",
+                author, width, height, aspectRatio, layerCount, readableSize, lastModified
+        );
+
+        infoAlert.setContentText(details);
+        infoAlert.showAndWait();
+    }
+
+    private int getGCD(int p, int q) {
+        if (q == 0) return p;
+        return getGCD(q, p % q);
+    }
+
+    @FXML
+    private void handleShowPreview(ActionEvent actionEvent) {
+        Image originalImage = null;
+        try {
+            originalImage = SessionUtils.getInstance().getChallengeImage();
+        } catch (Exception e) {
+            System.out.printf(String.valueOf(e));
+
+        }
+
+        if (originalImage == null) {
+            new Alert(Alert.AlertType.WARNING, "No original challenge image found to compare against!").showAndWait();
+            return;
+        }
+
+        Background checkerboard = canvasContainer.getBackground();
+        canvasContainer.setBackground(null);
+
+        SnapshotParameters params = new SnapshotParameters();
+        params.setFill(Color.TRANSPARENT);
+        WritableImage editedImage = canvasContainer.snapshot(params, null);
+
+        canvasContainer.setBackground(checkerboard);
+
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/preview-item.fxml"));
+            javafx.scene.Parent root = loader.load();
+
+            PreviewController controller = loader.getController();
+            controller.initData(originalImage, editedImage);
+
+            Stage previewStage = new Stage();
+            previewStage.setTitle("Before & After");
+            previewStage.setScene(new javafx.scene.Scene(root));
+
+            previewStage.initModality(javafx.stage.Modality.APPLICATION_MODAL);
+
+            previewStage.show();
+
+        } catch (IOException e) {
+            System.out.printf(String.valueOf(e));
+            new Alert(Alert.AlertType.ERROR, "Failed to load the Preview Window.").showAndWait();
+        }
+    }
+
+    private void updateScrollbarVisibility() {
+        Bounds viewport = scrollPane.getViewportBounds();
+        if (viewport == null) return;
+
+        double currentScale = zoomContainer.getScaleX();
+
+        double physicalCanvasWidth = currentProject.getWidth() * currentScale;
+        double physicalCanvasHeight = currentProject.getHeight() * currentScale;
+
+        boolean isSmallerThanScreen = (physicalCanvasWidth <= viewport.getWidth()) &&
+                (physicalCanvasHeight <= viewport.getHeight());
+
+        if (isSmallerThanScreen) {
+            if (!scrollPane.getStyleClass().contains("hidden-scrollbars")) {
+                scrollPane.getStyleClass().add("hidden-scrollbars");
+                scrollPane.setHvalue(0.5);
+                scrollPane.setVvalue(0.5);
+                scrollPane.setHvalue(0.5);
+                scrollPane.setVvalue(0.5);
+
+            }
+        } else {
+            scrollPane.getStyleClass().remove("hidden-scrollbars");
+        }
+    }
+
+private void setupWorkspaceDimensions(double width, double height) {
+    zoomContainer.setMaxSize(width, height);
+    zoomContainer.setPrefSize(width, height);
+
+    canvasContainer.setMaxSize(width, height);
+    canvasContainer.setPrefSize(width, height);
+
+    uiOverlay.setMaxSize(width, height);
+    uiOverlay.setPrefSize(width, height);
+    double maxDimension = Math.max(width, height);
+
+    double dynamicMaxBrush = Math.max(50.0, maxDimension * 0.05);
+
+    widthSlider.setMax(dynamicMaxBrush);
+
+    widthSlider.setValue(dynamicMaxBrush * 0.1);
+
+    double dynamicStrokeWidth = Math.max(1.5, maxDimension * 0.001);
+    brushCursor.setStrokeWidth(dynamicStrokeWidth);
+
+
 }
 
-// @TODO ajustement globaux, TDD
+    private void fitImageToScreen() {
+        Bounds viewport = scrollPane.getViewportBounds();
+
+        if (viewport == null || viewport.getWidth() == 0) {
+            Platform.runLater(this::fitImageToScreen);
+            return;
+        }
+
+        double padding = 0.90;
+
+        double scaleX = (viewport.getWidth() * padding) / currentProject.getWidth();
+        double scaleY = (viewport.getHeight() * padding) / currentProject.getHeight();
+
+        double fitScale = Math.min(scaleX, scaleY);
+
+        if (fitScale > 1.0) {
+            fitScale = 1.0;
+        }
+
+        zoomContainer.setScaleX(fitScale);
+        zoomContainer.setScaleY(fitScale);
+
+        scrollPane.layout();
+        scrollPane.setHvalue(0.5);
+        scrollPane.setVvalue(0.5);
+
+        updateScrollbarVisibility();
+    }
+
+}
+
+
+
+// @TODO TDD
