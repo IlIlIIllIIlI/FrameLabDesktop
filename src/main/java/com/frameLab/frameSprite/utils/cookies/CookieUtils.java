@@ -4,7 +4,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.frameLab.frameSprite.utils.EncryptUtils;
-import com.frameLab.frameSprite.utils.JsonUtils;
 
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -79,7 +78,7 @@ public class CookieUtils extends CookieManager implements Serializable {
 
         if (jsonToCookie != null) {
             for (CookieParsing cookie: jsonToCookie){
-                java.net.HttpCookie cookieParsed = cookie.toCookie();
+               HttpCookie cookieParsed = cookie.toCookie();
                 if (Objects.equals(cookieParsed.getDomain(), "localhost.local")){
                     cs.add(URI.create("http://localhost:8000"),cookie.toCookie());
                 }else{

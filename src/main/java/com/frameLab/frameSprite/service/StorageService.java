@@ -124,7 +124,8 @@ public class StorageService {
         gc.setFill(Color.TRANSPARENT);
         gc.fillRect(0, 0, w, h);
 
-        for (SpriteLayer layer : project.getLayers()) {
+        for (int i = project.getLayers().size() - 1; i >= 0; i--) {
+            SpriteLayer layer = project.getLayers().get(i);
             if (layer.isVisible && layer.image != null) {
 
                 gc.setGlobalAlpha(layer.opacity);

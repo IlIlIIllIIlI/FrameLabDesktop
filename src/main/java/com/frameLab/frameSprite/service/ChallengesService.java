@@ -10,19 +10,14 @@ public class ChallengesService {
     ApiUtils au;
 
     public ChallengesService() throws IOException {
-        au = new ApiUtils();
     }
 
     public Challenge getCurrentChallenge() throws Exception {
         SessionUtils cache = SessionUtils.getInstance();
         if (cache.getChallenge() == null) {
-
-            Object object = au.getObject("/challenges/current");
-            if (!(object instanceof Challenge)){
-                return null;
-            } else {
-                return (Challenge) object;
-            }
+            Challenge apiChallenge = ApiUtils.getCurrentChallenge();
+            cache.setChallenge(apiChallenge);
+            return apiChallenge;
         } else {
             return cache.getChallenge();
         }

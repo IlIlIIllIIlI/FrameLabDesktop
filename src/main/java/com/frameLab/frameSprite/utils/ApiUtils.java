@@ -1,11 +1,17 @@
 package com.frameLab.frameSprite.utils;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.frameLab.frameSprite.dto.ApiResponse;
+import com.frameLab.frameSprite.model.Challenge;
+import com.frameLab.frameSprite.model.User;
 import com.frameLab.frameSprite.utils.cookies.CookieUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.imageio.ImageIO;
 import javax.security.auth.login.LoginException;
 import java.io.*;
 import java.net.CookieManager;
@@ -20,7 +26,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 
-import static com.frameLab.frameSprite.utils.JsonUtils.mapToJson;
 import static java.net.CookiePolicy.ACCEPT_ALL;
 
 public class ApiUtils {
@@ -28,96 +33,100 @@ public class ApiUtils {
     static HttpClient client;
     static CookieUtils cu;
     static String apiUrl;
-    ObjectMapper objectMapper;
-    public ApiUtils() throws IOException {
-         cu = CookieUtils.getInstance();
+    static ObjectMapper objectMapper;
+    private ApiUtils() {
 
-        objectMapper = new ObjectMapper();
-
-        Properties config = new Properties();
-        config.load(getClass().getResourceAsStream("/config.properties"));
-        apiUrl = config.getProperty("apiUrl");
-        client = HttpClient.newBuilder()
-                .connectTimeout(Duration.ofSeconds(10))
-                .cookieHandler(new CookieManager(cu.getCookieStore(),ACCEPT_ALL))
-                .build();
 
     }
 
-    public boolean isLogged() {
+    static {
+        try {
+            cu = CookieUtils.getInstance();
+
+            objectMapper = new ObjectMapper();
+            objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+
+            Properties config = new Properties();
+            config.load(ApiUtils.class.getResourceAsStream("/config.properties"));
+            apiUrl = config.getProperty("apiUrl");
+            client = HttpClient.newBuilder()
+                    .connectTimeout(Duration.ofSeconds(10))
+                    .cookieHandler(new CookieManager(cu.getCookieStore(),ACCEPT_ALL))
+                    .build();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static boolean isLogged() {
         return cu.getSession() != null;
     }
 
-    public String getEmail() throws LoginException {
+    
 
-        try{
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(apiUrl+"/auth/me"))
-                    .timeout(Duration.ofSeconds(30))
-                    .GET()
-                    .build();
-            HttpResponse<String> response = client.send(request,
-                    HttpResponse.BodyHandlers.ofString());
+    private static <T> T execute(HttpRequest request, Class<T> responseType) throws Exception {
+        JavaType type = objectMapper.getTypeFactory().constructParametricType(ApiResponse.class, responseType);
 
+        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
 
-            if (response.statusCode() == 200) {
-                objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-                return objectMapper.readValue(response.body(), JsonUtils.Parsing.class).getUser().getEmail();
+        try {
+            ApiResponse<T> apiResponse = objectMapper.readValue(response.body(), type);
+
+            if (response.statusCode() != 200) {
+                String errorMsg = apiResponse.getMessage() != null ? apiResponse.getMessage() : "Error: " + response.statusCode();
+                throw new ApiException(errorMsg);
             }
-            throw new Exception("API ERROR : " + response.body());
-        } catch (Exception e) {
-            throw new LoginException(e.getMessage());
+
+
+            return apiResponse.getData();
+
+
+        } catch (JsonProcessingException e){
+            if (response.statusCode() != 200) {
+                throw new ApiException("Server Error: " + response.statusCode());
+            }
+
+            if (responseType == String.class) {
+                return responseType.cast(response.body());
+            }
+
+            throw new Exception("Failed to parse API response", e);
         }
+
+
     }
 
-    public String getFirstName() throws LoginException {
-
-        try{
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(apiUrl+"/auth/me"))
-                    .timeout(Duration.ofSeconds(30))
-                    .GET()
-                    .build();
-            HttpResponse<String> response = client.send(request,
-                    HttpResponse.BodyHandlers.ofString());
-
-
-            if (response.statusCode() == 200) {
-                objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-                return objectMapper.readValue(response.body(), JsonUtils.Parsing.class).getUser().getFirstName();
-            }
-            throw new Exception("API ERROR : " + response.body());
-        } catch (Exception e) {
-            throw new LoginException(e.getMessage());
-        }
+    private static <T> T getObject(String endpoint, Class<T> returnType) throws Exception {
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(apiUrl + endpoint))
+                .timeout(Duration.ofSeconds(30))
+                .GET()
+                .build();
+        return execute(request, returnType);
     }
 
-    public void logOut() throws Exception {
-        try{
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(apiUrl+"/auth/logout/"))
-                    .timeout(Duration.ofSeconds(30))
-                    .GET()
-                    .build();
-            HttpResponse<String> response = client.send(request,
-                    HttpResponse.BodyHandlers.ofString());
 
 
-            if (response.statusCode() == 200) {
-                return;
-            }
-            throw new Exception("API ERROR : " + response.statusCode());
-        } catch (Exception e) {
-            throw new Exception(e.getMessage());
-        }
+
+    public static String getFirstName() throws Exception {
+        return getObject("/auth/me", User.class).getFirstName();
+
     }
 
-    public static boolean  login(String email, String password) throws LoginException {
+    public static User getMe() throws Exception {
+        return getObject("/auth/me", User.class);
+
+    }
+
+    public static void logOut() throws Exception {
+        getObject("/auth/logout/", String.class);
+    }
+
+    public static void login(String email, String password) throws Exception {
         Map<String,String> data = new HashMap<>();
         data.put("email",email);
         data.put("password",password);
-        String jsonBody = mapToJson(data);
-        try{
+        String jsonBody = objectMapper.writeValueAsString(data);
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(apiUrl+"/auth/login"))
                     .timeout(Duration.ofSeconds(30))
@@ -125,40 +134,16 @@ public class ApiUtils {
                     .POST(HttpRequest.BodyPublishers.ofString(jsonBody))
                     .build();
 
-            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-                if (response.statusCode() == 200) {
-                return true;
-            }
+            execute(request, String.class);
 
-            throw new Exception("Api Error" + response.statusCode());
-
-        } catch (Exception e) {
-            throw new LoginException(e.getMessage());
-        }
     }
 
-    public Object getObject(String url) throws Exception {
-        try{
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(apiUrl+url))
-                    .timeout(Duration.ofSeconds(30))
-                    .GET()
-                    .build();
-            HttpResponse<String> response = client.send(request,
-                    HttpResponse.BodyHandlers.ofString());
-
-
-            if (response.statusCode() == 200) {
-                objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-                return objectMapper.readValue(response.body(), JsonUtils.Parsing.class).getMainClass();
-            }
-            throw new Exception("API ERROR : " + response.statusCode());
-        } catch (Exception e) {
-            throw new Exception(e.getMessage());
-        }
+    public static Challenge getCurrentChallenge() throws Exception {
+            return getObject("/challenges/current", Challenge.class);
     }
 
-    public int uploadEntry(int userId, int challengeId, File imageFile) throws Exception {
+
+    public static int uploadEntry(int userId, int challengeId, File imageFile) throws IOException, InterruptedException {
         String boundary = "---Boundary" + System.currentTimeMillis();
         ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
         PrintWriter writer = new PrintWriter(new OutputStreamWriter(byteStream, StandardCharsets.UTF_8), true);

@@ -4,7 +4,9 @@ import atlantafx.base.theme.NordDark;
 import atlantafx.base.theme.NordLight;
 import com.frameLab.frameSprite.controller.LoginController;
 import com.frameLab.frameSprite.controller.MainPageController;
+import com.frameLab.frameSprite.model.User;
 import com.frameLab.frameSprite.utils.ApiUtils;
+import com.frameLab.frameSprite.utils.SessionUtils;
 import javafx.application.Application;
 import javafx.application.HostServices;
 import javafx.fxml.FXMLLoader;
@@ -45,8 +47,9 @@ public class Main extends Application {
         primaryStage.getIcons().addAll( new Image(Objects.requireNonNull(getClass().getResourceAsStream("/assets/icon-white.png"))));
         try {
             hostServices = getHostServices();
-            ApiUtils au = new ApiUtils();
-            if (au.isLogged()){
+            if (ApiUtils.isLogged()){
+                User user = ApiUtils.getMe();
+                SessionUtils.getInstance().setUser(user);
                 FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/main-page-view.fxml"));
                 Parent root = loader.load();
                 MainPageController controller = loader.getController();

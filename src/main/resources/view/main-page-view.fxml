@@ -53,6 +53,12 @@
                 </font>
             </Button>
 
+            <Button fx:id="retryButton" onAction="#handleRetry" prefHeight="45.0" prefWidth="250.0" text="Retry Connection" visible="false" managed="false">
+                <font>
+                    <Font name="Roboto Bold" size="15.0" />
+                </font>
+            </Button>
+
         </VBox>
     </center>
 

@@ -3,8 +3,10 @@ package com.frameLab.frameSprite.controller;
 import com.frameLab.frameSprite.Main;
 import com.frameLab.frameSprite.model.Challenge;
 import com.frameLab.frameSprite.service.ChallengesService;
+import com.frameLab.frameSprite.utils.ApiException;
 import com.frameLab.frameSprite.utils.ApiUtils;
 import com.frameLab.frameSprite.utils.SessionUtils;
+import javafx.application.Platform;
 import javafx.concurrent.Task;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -25,6 +27,8 @@ import java.util.Properties;
 
 public class MainPageController {
     @FXML
+    private Button retryButton;
+    @FXML
     private Button themeToggle;
     @FXML
     private Button projectsButton;
@@ -32,19 +36,15 @@ public class MainPageController {
     private Label currentChallengeLabel;
     @FXML
     private ImageView currentChallengeImage;
-    @FXML
-    private Button logOutButton;
-    ApiUtils au;
+
     @FXML
     private Label helloLabel;
     ChallengesService challengesService;
 
 
     public void initialize() throws Exception {
-        this.au = new ApiUtils();
         this.challengesService = new ChallengesService();
-        setLabel();
-        setCurrentChallenge();
+        loadData();
     }
 
     private void setCurrentChallenge() throws Exception {
@@ -66,8 +66,18 @@ public class MainPageController {
     }
 
 
-    public void setLabel() throws LoginException {
-        helloLabel.setText("Hello "+au.getFirstName());
+    public void setLabel() throws Exception {
+        SessionUtils cache = SessionUtils.getInstance();
+
+        String firstName;
+        if (cache.getUser()== null){
+            firstName = ApiUtils.getFirstName();
+
+        } else {
+            firstName = cache.getUser().getFirstName();
+        }
+
+        helloLabel.setText("Hello "+firstName);
 
     }
 
@@ -82,7 +92,8 @@ public class MainPageController {
             Task<Void> task = new Task<Void>() {
                 @Override
                 protected Void call() throws Exception {
-                   au.logOut();
+                    ApiUtils.logOut();
+                    SessionUtils.clearInstance();
                    return null;
                 }
 
@@ -118,5 +129,48 @@ public class MainPageController {
     @FXML
     private void handleTheme(ActionEvent actionEvent) {
         themeToggle.setText(Main.changeTheme());
+    }
+
+    public void handleRetry(ActionEvent actionEvent) throws IOException {
+        loadData();
+    }
+
+    private void loadData() throws IOException {
+        retryButton.setVisible(false);
+        retryButton.setManaged(false);
+        projectsButton.setVisible(true);
+        projectsButton.setManaged(true);
+
+        helloLabel.setText("Connecting...");
+        currentChallengeLabel.setText("Loading challenge...");
+
+        Task<Void> loadInitialDataTask = new Task<>() {
+            @Override
+            protected Void call() {
+
+                Platform.runLater(() -> {
+                    try {
+                        setLabel();
+                        setCurrentChallenge();
+                    } catch (Exception e) {
+                        throw new RuntimeException(e);
+                    }
+
+                });
+
+                return null;
+            }
+        };
+
+        loadInitialDataTask.setOnFailed(event -> {
+            helloLabel.setText("Offline");
+            currentChallengeLabel.setText("Failed to connect: Please Try Again");
+            projectsButton.setVisible(false);
+            projectsButton.setManaged(false);
+            retryButton.setVisible(true);
+            retryButton.setManaged(true);
+        });
+
+        new Thread(loadInitialDataTask).start();
     }
 }

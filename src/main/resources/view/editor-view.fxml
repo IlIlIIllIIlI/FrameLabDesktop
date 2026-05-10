@@ -78,6 +78,8 @@
                     </items>
                 </MenuButton>
 
+                <Button text="Nuke Project" onAction="#handleNuke" textFill="RED"/>
+
                 <Separator styleClass="editor-separator" />
 
                 <Label styleClass="editor-label" text="Rotate:" />

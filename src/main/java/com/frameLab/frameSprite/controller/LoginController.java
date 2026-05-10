@@ -32,11 +32,17 @@ public class LoginController {
     }
 
     @FXML
-    private void handleLogin(ActionEvent actionEvent) throws LoginException {
+    private void handleLogin(ActionEvent actionEvent) {
         Task<Boolean> task = new Task<>() {
             @Override
             protected Boolean call() throws Exception {
-               return ApiUtils.login(emailField.getText(),passwordField.getText());
+
+                ApiUtils.login(emailField.getText(),passwordField.getText());
+
+                User loggedInUser = ApiUtils.getMe();
+
+                SessionUtils.getInstance().setUser(loggedInUser);
+                return null;
             }
 
         };
@@ -50,7 +56,8 @@ public class LoginController {
         });
 
         task.setOnFailed( event -> {
-            errorLabel.setText("An Error happened");
+            Throwable error = task.getException();
+            errorLabel.setText(error.getMessage());
         });
 
         Thread thread = new Thread(task);

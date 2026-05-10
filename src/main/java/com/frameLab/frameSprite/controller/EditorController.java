@@ -493,9 +493,8 @@ public class EditorController {
                     throw new RuntimeException("No Preview image");
                 }
 
-               ApiUtils apiUtils = new ApiUtils();
 
-               int responseCode = apiUtils.uploadEntry(
+               int responseCode = ApiUtils.uploadEntry(
                        SessionUtils.getInstance().getUser().getId(),
                        currentProject.getChallengeId(),
                        previewFile
@@ -918,7 +917,6 @@ public class EditorController {
         ButtonType applyButton = new ButtonType("Apply");
         ButtonType cancelButton = new ButtonType("Cancel", ButtonBar.ButtonData.CANCEL_CLOSE);
 
-
     }
 
     @FXML
@@ -1207,6 +1205,44 @@ private void setupWorkspaceDimensions(double width, double height) {
         updateScrollbarVisibility();
     }
 
+    @FXML
+    private void handleNuke(ActionEvent actionEvent) {
+        Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
+        confirm.setTitle("Nuke Project");
+        confirm.setHeaderText("⚠ RESET EVERYTHING ⚠");
+        confirm.setContentText("Are you sure you want to nuke this project? All custom layers will be destroyed and this CANNOT be undone.");
+
+        Optional<ButtonType> result = confirm.showAndWait();
+
+        if (result.isPresent() && result.get() == ButtonType.OK) {
+
+            this.historyService = new HistoryService();
+
+            layerListModel.clear();
+            canvasContainer.getChildren().clear();
+
+            loadChallengeBackground();
+
+            List<SpriteLayer> safeCopy = new ArrayList<>(currentProject.getLayers());
+
+            layerListModel.setAll(safeCopy);
+
+            loadImage();
+
+            layerListView.getSelectionModel().selectFirst();
+
+            Platform.runLater(this::fitImageToScreen);
+
+            Platform.runLater(() -> {
+                try {
+                    handleSave(new ActionEvent());
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            });
+        }
+
+    }
 }
 
 
