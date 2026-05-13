@@ -1,20 +1,21 @@
-package com.frameLab.frameSprite.effect;
+package com.frameLab.frameSprite.effect.filters.kernels;
 
-public class GaussianBlurFilter extends KernelFilter{
+public class SharpFilter extends KernelFilter{
+
     @Override
     protected double[][] getKernel() {
         return new double[][]{
-                {1,2,1},{2,4,2},{1,2,1}
+                {0,-1,0},{-1,5,-1},{0,-1,0}
         };
     }
 
     @Override
     protected double getDivisor() {
-        return 16.0;
+        return 1.0;
     }
 
     @Override
     public String getName() {
-        return "Gaussian Blur";
+        return "Sharpen";
     }
 }

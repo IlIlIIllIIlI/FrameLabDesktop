@@ -1,4 +1,4 @@
-package com.frameLab.frameSprite.effect;
+package com.frameLab.frameSprite.effect.filters.kernels;
 
 public class EdgeFilter extends  DoubleKernelFilter {
     @Override

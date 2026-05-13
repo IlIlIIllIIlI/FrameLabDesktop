@@ -1,4 +1,4 @@
-package com.frameLab.frameSprite.effect;
+package com.frameLab.frameSprite.effect.filters.pixels;
 
 public class SepiaFilter extends PixelFilter{
     @Override

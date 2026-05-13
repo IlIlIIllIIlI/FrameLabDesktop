@@ -1,4 +1,4 @@
-package com.frameLab.frameSprite.effect;
+package com.frameLab.frameSprite.effect.filters;
 
 import javafx.scene.image.Image;
 import javafx.scene.image.WritableImage;

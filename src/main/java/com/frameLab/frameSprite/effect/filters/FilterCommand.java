@@ -1,10 +1,9 @@
-package com.frameLab.frameSprite.effect;
+package com.frameLab.frameSprite.effect.filters;
 
+import com.frameLab.frameSprite.effect.Command;
 import javafx.scene.SnapshotParameters;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
-import javafx.scene.image.PixelReader;
-import javafx.scene.image.PixelWriter;
 import javafx.scene.image.WritableImage;
 import javafx.scene.paint.Color;
 
