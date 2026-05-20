@@ -13,7 +13,6 @@
 
     <top>
         <HBox alignment="CENTER_LEFT" spacing="20.0" BorderPane.alignment="CENTER">
-            <Button fx:id="themeToggle" onAction="#handleTheme" text="Light Mode"/>
 
             <padding>
                 <Insets bottom="15.0" left="25.0" right="25.0" top="15.0" />
@@ -26,6 +25,8 @@
             </Label>
 
             <Region HBox.hgrow="ALWAYS" />
+
+            <Button fx:id="settingsButton" onAction="#handleSettings" text="Settings" prefHeight="30.0" />
 
             <Button fx:id="logOutButton" onAction="#handleLogOut" text="Log Out" prefHeight="30.0" />
         </HBox>

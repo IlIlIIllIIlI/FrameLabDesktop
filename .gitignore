@@ -78,3 +78,5 @@ keyset.json
 projects/
 
 dependency-reduced-pom.xml
+
+options.json

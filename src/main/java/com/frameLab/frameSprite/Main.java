@@ -2,9 +2,11 @@ package com.frameLab.frameSprite;
 
 import atlantafx.base.theme.NordDark;
 import atlantafx.base.theme.NordLight;
+import com.frameLab.frameSprite.controller.KeybindItemController;
 import com.frameLab.frameSprite.controller.LoginController;
 import com.frameLab.frameSprite.controller.MainPageController;
 import com.frameLab.frameSprite.model.User;
+import com.frameLab.frameSprite.service.SettingsService;
 import com.frameLab.frameSprite.utils.ApiUtils;
 import com.frameLab.frameSprite.utils.SessionUtils;
 import javafx.application.Application;
@@ -42,7 +44,8 @@ public class Main extends Application {
 
     @Override
     public void start(Stage primaryStage) throws Exception {
-        Application.setUserAgentStylesheet(new NordDark().getUserAgentStylesheet());
+        String savedTheme = SettingsService.getInstance().getCurrentTheme();
+        Main.setUserAgentStylesheet(savedTheme);
 
         primaryStage.getIcons().addAll( new Image(Objects.requireNonNull(getClass().getResourceAsStream("/assets/icon-white.png"))));
         try {
@@ -97,12 +100,16 @@ public class Main extends Application {
 
     public static String changeTheme(){
         if (Objects.equals(Application.getUserAgentStylesheet(), "/atlantafx/base/theme/nord-light.css")) {
-            Application.setUserAgentStylesheet(new NordDark().getUserAgentStylesheet());
+            Main.setUserAgentStylesheet(new NordDark().getUserAgentStylesheet());
             return "Light Mode";
         } else {
-            Application.setUserAgentStylesheet(new NordLight().getUserAgentStylesheet());
+            Main.setUserAgentStylesheet(new NordLight().getUserAgentStylesheet());
             return "Dark Mode";
         }
+    }
+
+    public static String getTheme(){
+       return Main.getUserAgentStylesheet();
     }
     public static void openWebsite(String url){
        hostServices.showDocument(url);

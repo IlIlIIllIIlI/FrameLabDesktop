@@ -6,7 +6,7 @@ import javafx.scene.image.PixelReader;
 import javafx.scene.image.PixelWriter;
 import javafx.scene.image.WritableImage;
 
-public  abstract class PixelFilter implements Filter {
+public abstract class PixelFilter implements Filter {
 
     public WritableImage apply(Image source){
         int width = (int) source.getWidth();

@@ -13,7 +13,7 @@ public class GrayScaleFilter extends PixelFilter {
             int green = (argb >> 8) & 0xFF;
             int blue = argb & 0xFF;
 
-            int lum = (int) (red * 0.2126 + green * 0.7152 + blue * 0.0722);
+            int lum = (int) Math.round(red * 0.2126 + green * 0.7152 + blue * 0.0722);
 
             return (alpha << 24) | (lum << 16) | (lum << 8) | lum;
     }

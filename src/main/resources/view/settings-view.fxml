@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<BorderPane xmlns="http://javafx.com/javafx"
+            xmlns:fx="http://javafx.com/fxml"
+            fx:controller="com.frameLab.frameSprite.controller.SettingsController"
+           >
+
+    <top>
+        <ToolBar>
+            <Button text="← Back" onAction="#handleGoBack" />
+            <Pane HBox.hgrow="ALWAYS" />
+            <Label text="Keyboard Shortcuts" styleClass="settings-title" />
+            <Pane HBox.hgrow="ALWAYS" />
+            <Button text="Reset All" onAction="#handleResetAll" />
+            <Pane HBox.hgrow="ALWAYS" />
+            <Button text="Save" onAction="#handleSaving" />
+        </ToolBar>
+    </top>
+
+    <center>
+        <ScrollPane fitToWidth="true" styleClass="settings-scroll-pane">
+
+            <VBox spacing="20" styleClass="settings-container">
+
+                <HBox spacing="15" alignment="CENTER_LEFT">
+                    <Label text="App Theme" prefWidth="150" styleClass="settings-subtitle" />
+                    <Button fx:id="themeToggle" onAction="#handleTheme" prefWidth="120" styleClass="settings-action-button" />
+                </HBox>
+
+                <Separator />
+
+                <Label text="Keyboard Shortcuts" styleClass="settings-title" />
+
+                <VBox fx:id="keybindsContainer" spacing="10" />
+
+            </VBox>
+
+        </ScrollPane>
+    </center>
+
+</BorderPane>

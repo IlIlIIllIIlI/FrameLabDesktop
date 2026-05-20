@@ -31,7 +31,7 @@ import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
 public class StorageService {
-    private final String BASE_PATH = "projects/";
+    private String BASE_PATH = "projects/";
     private final ObjectMapper mapper = new ObjectMapper();
 
     public StorageService(){

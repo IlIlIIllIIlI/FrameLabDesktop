@@ -15,9 +15,8 @@ import com.frameLab.frameSprite.effect.filters.pixels.ContrastFilter;
 import com.frameLab.frameSprite.effect.filters.pixels.GrayScaleFilter;
 import com.frameLab.frameSprite.effect.filters.pixels.SepiaFilter;
 import com.frameLab.frameSprite.model.Project;
-import com.frameLab.frameSprite.service.HistoryService;
-import com.frameLab.frameSprite.service.ProjectsService;
-import com.frameLab.frameSprite.service.StorageService;
+import com.frameLab.frameSprite.service.*;
+import com.frameLab.frameSprite.utils.Actions;
 import com.frameLab.frameSprite.utils.ApiUtils;
 import com.frameLab.frameSprite.utils.SessionUtils;
 import javafx.application.Platform;
@@ -40,15 +39,14 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.image.PixelWriter;
 import javafx.scene.image.WritableImage;
-import javafx.scene.input.KeyCode;
-import javafx.scene.input.KeyEvent;
-import javafx.scene.input.MouseEvent;
-import javafx.scene.input.ScrollEvent;
+import javafx.scene.input.*;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.ImagePattern;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.Rectangle;
+import javafx.scene.shape.StrokeLineCap;
+import javafx.scene.shape.StrokeLineJoin;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import org.slf4j.Logger;
@@ -87,6 +85,7 @@ public class EditorController {
     @FXML
     private StackPane canvasContainer;
 
+    private ChallengesService challengesService;
     private HistoryService historyService;
     private Project currentProject;
     private Canvas currentCanvas;
@@ -98,9 +97,10 @@ public class EditorController {
 
     private ProjectsService projectsService;
 
-    public void initialize(){
+    public void initialize() throws IOException {
         this.historyService = new HistoryService();
         this.projectsService = new ProjectsService();
+        this.challengesService = new ChallengesService();
         rotateSlider.valueProperty().addListener((obs, old, next) -> {
             if (currentCanvas != null) {
                 this.handleApplyRotate(next.intValue());
@@ -179,66 +179,9 @@ public class EditorController {
 
         canvasContainer.sceneProperty().addListener((obs, oldScene, newScene) -> {
             if (newScene != null) {
-                newScene.addEventFilter(KeyEvent.KEY_PRESSED, event -> {
-                    if (event.isControlDown() && event.getCode() == KeyCode.Z) {
-                        if (event.isShiftDown()) {
-                            handleRedo(new ActionEvent());
-                        } else {
-                            handleUndo(new ActionEvent());
-                        }
-
-                        event.consume();
-                    }
-                    if (event.isControlDown() && event.getCode() == KeyCode.S) {
-                        try {
-                            handleSave(new ActionEvent());
-                        } catch (IOException e) {
-                            new Alert(Alert.AlertType.ERROR, "Failed to save file: " + e.getMessage()).showAndWait();
-                        }
-
-                        event.consume();
-                    }
-
-                    if (event.isControlDown() && event.getCode() == KeyCode.E) {
-                        try {
-                            handleExport(new ActionEvent());
-                        } catch (IOException e) {
-                            new Alert(Alert.AlertType.ERROR, "Failed to Export file: " + e.getMessage()).showAndWait();
-                        }
-
-                        event.consume();
-                    }
-
-                    if (event.isControlDown()) {
-                        Bounds viewportBounds = scrollPane.getViewportBounds();
-                        double centerX = viewportBounds.getWidth() / 2.0;
-                        double centerY = viewportBounds.getHeight() / 2.0;
-
-                        if (event.getCode() == KeyCode.EQUALS || event.getCode() == KeyCode.ADD) {
-                            // Zoom In
-                            applyZoom(1.1, centerX, centerY);
-                            event.consume();
-                        }
-                        else if (event.getCode() == KeyCode.MINUS || event.getCode() == KeyCode.SUBTRACT) {
-                            // Zoom Out
-                            applyZoom(1 / 1.1, centerX, centerY);
-                            event.consume();
-                        }
-                        else if (event.getCode() == KeyCode.DIGIT0 || event.getCode() == KeyCode.NUMPAD0) {
-                            zoomContainer.setScaleX(1.0);
-                            zoomContainer.setScaleY(1.0);
-                            scrollPane.setHvalue(0.5);
-                            scrollPane.setVvalue(0.5);
-                            scrollPane.layout();
-                            event.consume();
-                        }
-                    }
-                });
-
-
+                setupGlobalKeybinds();
             }
-
-            });
+        });
 
         scrollPane.addEventFilter(ScrollEvent.SCROLL, event -> {
             if (event.isControlDown() && event.getDeltaY() != 0) {
@@ -348,18 +291,7 @@ public class EditorController {
             this.currentProject.setWidth(projectWidth);
             this.currentProject.setHeight(projectHeight);
 
-            Canvas bgCanvas = new Canvas(projectWidth, projectHeight);
-            GraphicsContext gc = bgCanvas.getGraphicsContext2D();
-
-            gc.drawImage(image, 0,0);
-
-            SnapshotParameters params = new SnapshotParameters();
-            params.setFill(Color.TRANSPARENT);
-            WritableImage scaledWritableImage = bgCanvas.snapshot(params, null);
-
-            SpriteLayer bgLayer = new SpriteLayer("Challenge_Background", projectWidth, projectHeight);
-            bgLayer.setImage(scaledWritableImage);
-
+            SpriteLayer bgLayer = challengesService.generateChallengeLayer(projectWidth, projectHeight, "Challenge_Background");
             this.currentProject.getLayers().add(bgLayer);
 
 
@@ -587,8 +519,8 @@ public class EditorController {
     private void drawing() {
         GraphicsContext gc = currentCanvas.getGraphicsContext2D();
 
-        gc.setLineCap(javafx.scene.shape.StrokeLineCap.ROUND);
-        gc.setLineJoin(javafx.scene.shape.StrokeLineJoin.ROUND);
+        gc.setLineCap(StrokeLineCap.ROUND);
+        gc.setLineJoin(StrokeLineJoin.ROUND);
 
         canvasContainer.setOnMousePressed(e -> {
             currentPaintCommand = new Paint(currentCanvas, 0, 0, currentCanvas.getWidth(), currentCanvas.getHeight());
@@ -681,37 +613,11 @@ public class EditorController {
 
         if ( result.get() == challengeButton) {
             try {
-                Image image= SessionUtils.getInstance().getChallengeImage();
-                int projectWidth = 800;
-                int projectHeight = 600;
-                this.currentProject.setWidth(projectWidth);
-                this.currentProject.setHeight(projectHeight);
+                int projectWidth = currentProject.getWidth();
+                int projectHeight = currentProject.getHeight();
+                newLayer = challengesService.generateChallengeLayer(projectWidth, projectHeight, newName);
 
-                double scaleX = (double) projectWidth / image.getWidth();
-                double scaleY = (double) projectHeight / image.getHeight();
-                double scale = Math.min(scaleX, scaleY);
-
-                double finalWidth = image.getWidth() * scale;
-                double finalHeight = image.getHeight() * scale;
-
-                double x = (projectWidth - finalWidth) / 2;
-                double y = (projectHeight - finalHeight) / 2;
-
-                Canvas resizeCanvas = new Canvas(projectWidth, projectHeight);
-                GraphicsContext gc = resizeCanvas.getGraphicsContext2D();
-
-                gc.drawImage(image, x, y, finalWidth, finalHeight);
-
-                SnapshotParameters params = new SnapshotParameters();
-                params.setFill(Color.TRANSPARENT);
-
-                WritableImage scaledWritableImage = resizeCanvas.snapshot(params, null);
-
-
-                newLayer.setImage(scaledWritableImage);
-
-                newCanvas.getGraphicsContext2D().drawImage(scaledWritableImage, 0, 0);
-
+                newCanvas.getGraphicsContext2D().drawImage(newLayer.getImage(), 0, 0);
             } catch(Exception e) {
                 Alert error = new Alert(Alert.AlertType.ERROR);
                 error.setTitle("ERROR");
@@ -1254,8 +1160,51 @@ private void setupWorkspaceDimensions(double width, double height) {
         }
 
     }
+
+    private void setupGlobalKeybinds() {
+        if (canvasContainer.getScene() == null) return;
+        SettingsService keys = SettingsService.getInstance();
+
+        Map<KeyCombination, Runnable> accelerators = canvasContainer.getScene().getAccelerators();
+
+        accelerators.clear();
+
+        addAccelerator(accelerators, keys.getBind(Actions.SAVE), () -> {
+            try { handleSave(new ActionEvent()); } catch (Exception ignored) {}
+        });
+        addAccelerator(accelerators, keys.getBind(Actions.EXPORT), () -> {
+            try { handleExport(new ActionEvent()); } catch (Exception ignored) {}
+        });
+
+        addAccelerator(accelerators, keys.getBind(Actions.UNDO), () -> handleUndo(new ActionEvent()));
+        addAccelerator(accelerators, keys.getBind(Actions.REDO), () -> handleRedo(new ActionEvent()));
+
+        addAccelerator(accelerators, keys.getBind(Actions.ZOOM_IN), () -> {
+            Bounds bounds = scrollPane.getViewportBounds();
+            applyZoom(1.1, bounds.getWidth() / 2, bounds.getHeight() / 2);
+        });
+
+        addAccelerator(accelerators, keys.getBind(Actions.TOOL_ERASER), () -> eraserToggle.setSelected(true));
+        addAccelerator(accelerators, keys.getBind(Actions.TOOL_BRUSH), () -> eraserToggle.setSelected(false));
+
+    }
+
+    private void addAccelerator(Map<KeyCombination, Runnable> accelerators, KeyCombination combo, Runnable action) {
+        if (combo != null) {
+            accelerators.put(combo, action);
+        }
+    }
+
+
+    @FXML
+    private void handleSettings(ActionEvent actionEvent) {
+        try {
+            SettingsController.previousScene = canvasContainer.getScene();
+            SettingsController.callback = this::setupGlobalKeybinds;
+            Main.changeScene("/view/settings-view.fxml");
+            handleSave(new ActionEvent());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 }
-
-
-
-// @TODO TDD

@@ -29,8 +29,6 @@ public class MainPageController {
     @FXML
     private Button retryButton;
     @FXML
-    private Button themeToggle;
-    @FXML
     private Button projectsButton;
     @FXML
     private Label currentChallengeLabel;
@@ -126,11 +124,6 @@ public class MainPageController {
         }
     }
 
-    @FXML
-    private void handleTheme(ActionEvent actionEvent) {
-        themeToggle.setText(Main.changeTheme());
-    }
-
     public void handleRetry(ActionEvent actionEvent) throws IOException {
         loadData();
     }
@@ -172,5 +165,16 @@ public class MainPageController {
         });
 
         new Thread(loadInitialDataTask).start();
+    }
+
+    @FXML
+    private void handleSettings(ActionEvent actionEvent) {
+        try {
+            SettingsController.previousScene = helloLabel.getScene();
+            SettingsController.callback = null;
+            Main.changeScene("/view/settings-view.fxml");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }

@@ -34,6 +34,14 @@
                         <FontIcon iconLiteral="mdi2c-compare" iconSize="18" />
                     </graphic>
                 </Button>
+
+                <Button styleClass="editor-button" onAction="#handleSettings" text="Settings">
+                    <graphic>
+                        <FontIcon iconLiteral="mdi2c-cog" iconSize="18" />
+                    </graphic>
+                </Button>
+
+
                 <Separator styleClass="editor-separator" />
                 <Button onAction="#handleUndo">
                     <graphic>

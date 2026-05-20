@@ -17,6 +17,11 @@ public class ProjectsService {
         storageService = new StorageService();
     }
 
+    public ProjectsService(ProjectDAO dao, StorageService storageService) {
+        this.dao = dao;
+        this.storageService = storageService;
+    }
+
     public List<Project> getProjectsByUserAndChallenge(int userId, int challengeId) throws IOException {
         User userCache = SessionUtils.getInstance().getUser();
         if (userCache == null || userCache.getProjects() == null) {

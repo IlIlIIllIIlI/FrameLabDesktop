@@ -9,7 +9,7 @@ public class CookieParsing {
     public String commentURL;
     public boolean toDiscard;
     public String domain;
-    public long maxAge;
+    public long maxAge = -1L;
     public String path;
     public String portlist;
     public boolean secure;
@@ -24,7 +24,7 @@ public class CookieParsing {
         this.name = cookie.getName();
         this.value = cookie.getValue();
         this.comment = cookie.getComment();
-        this.commentURL = getCommentURL();
+        this.commentURL = cookie.getCommentURL();
         this.toDiscard = cookie.getDiscard();
         this.domain = cookie.getDomain();
         this.maxAge = cookie.getMaxAge();
