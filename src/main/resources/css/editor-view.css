@@ -13,3 +13,22 @@
     -fx-opacity: 0;
     -fx-mouse-transparent: true;
 }
+
+.list-view .list-cell:selected,
+.list-view:focused .list-cell:selected {
+    -fx-background-color: -color-bg-subtle !important;
+    -fx-text-fill: -color-fg-default !important;
+}
+
+.list-view .list-cell:hover:empty {
+    -fx-background-color: transparent !important;
+}
+
+.list-view .list-cell:hover {
+    -fx-background-color: -color-bg-subtle !important;
+}
+
+.nuke-icon {
+    -fx-icon-color: #ff5555 !important;
+}
+

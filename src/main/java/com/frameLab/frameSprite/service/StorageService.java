@@ -216,5 +216,13 @@ public class StorageService {
 
         }
 
-        }
     }
+
+    public void exportProjectAsImage(WritableImage image, File targetFile) throws IOException {
+        ImageIO.write(SwingFXUtils.fromFXImage(image, null), "png", targetFile);
+    }
+
+
+}
+
+

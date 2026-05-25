@@ -3,6 +3,7 @@ package com.frameLab.frameSprite.controller;
 import com.frameLab.frameSprite.Main;
 import com.frameLab.frameSprite.Sprites.SpriteLayer;
 import com.frameLab.frameSprite.effect.*;
+import com.frameLab.frameSprite.effect.Paint;
 import com.frameLab.frameSprite.effect.filters.*;
 import com.frameLab.frameSprite.effect.filters.kernels.BlurFilter;
 import com.frameLab.frameSprite.effect.filters.kernels.EdgeFilter;
@@ -27,10 +28,12 @@ import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.geometry.Bounds;
+import javafx.geometry.Insets;
 import javafx.geometry.Point2D;
 import javafx.geometry.Pos;
 import javafx.scene.Cursor;
 import javafx.scene.Node;
+import javafx.scene.Parent;
 import javafx.scene.SnapshotParameters;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
@@ -41,14 +44,15 @@ import javafx.scene.image.PixelWriter;
 import javafx.scene.image.WritableImage;
 import javafx.scene.input.*;
 import javafx.scene.layout.*;
-import javafx.scene.paint.Color;
-import javafx.scene.paint.ImagePattern;
+import javafx.scene.paint.*;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.shape.StrokeLineCap;
 import javafx.scene.shape.StrokeLineJoin;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
+import javafx.util.Duration;
+import javafx.util.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -58,6 +62,14 @@ import java.util.*;
 
 public class EditorController {
     private static final Logger log = LoggerFactory.getLogger(EditorController.class);
+    @FXML
+    private BorderPane editorRoot;
+    @FXML
+    private  ToggleButton panToggle;
+    @FXML
+    private  ToggleButton brushToggle;
+    @FXML
+    private ToggleGroup toolGroup;
     @FXML
     private Slider contrastSlider;
     @FXML
@@ -84,6 +96,16 @@ public class EditorController {
     private ListView<SpriteLayer> layerListView;
     @FXML
     private StackPane canvasContainer;
+    @FXML
+    private ToggleButton shapeToggle;
+    @FXML
+    private ComboBox<String> shapeTypeComboBox;
+    @FXML
+    private ToggleButton shapeFillToggle;
+    @FXML
+    private ColorPicker secondaryColorPicker;
+    @FXML
+    private ToggleButton gradientToggle;
 
     private ChallengesService challengesService;
     private HistoryService historyService;
@@ -93,14 +115,44 @@ public class EditorController {
     private double lastX;
     private double lastY;
 
+    private double panStartX, panStartY;
+    private double panStartHval, panStartVval;
+    private boolean isPanning = false;
+    private double shapeStartX, shapeStartY;
+    private Image preShapeSnapshot;
+
+
     private ObservableList<SpriteLayer> layerListModel;
 
     private ProjectsService projectsService;
+
+    private Project originalProject;
 
     public void initialize() throws IOException {
         this.historyService = new HistoryService();
         this.projectsService = new ProjectsService();
         this.challengesService = new ChallengesService();
+
+        toolGroup = new ToggleGroup();
+        brushToggle.setToggleGroup(toolGroup);
+        eraserToggle.setToggleGroup(toolGroup);
+        panToggle.setToggleGroup(toolGroup);
+        shapeToggle.setToggleGroup(toolGroup);
+        gradientToggle.setToggleGroup(toolGroup);
+
+        toolGroup.selectedToggleProperty().addListener((obs, oldToggle, newToggle) -> {
+            if (newToggle == null && oldToggle != null) {
+                oldToggle.setSelected(true);
+            }
+
+            if (panToggle.isSelected()) {
+                brushCursor.setVisible(false);
+                canvasContainer.setCursor(Cursor.OPEN_HAND);
+            } else {
+                canvasContainer.setCursor(Cursor.NONE);
+            }
+        });
+
         rotateSlider.valueProperty().addListener((obs, old, next) -> {
             if (currentCanvas != null) {
                 this.handleApplyRotate(next.intValue());
@@ -108,11 +160,13 @@ public class EditorController {
         });
 
 
+        Platform.runLater(() -> setupManualTooltips(editorRoot));
+
     }
 
     public void initData(Project project){
-        this.currentProject = project;
-
+        this.originalProject = project;
+        this.currentProject = copy(project);
         transparentGrid();
 
         if (project.getLayers()==null){
@@ -198,7 +252,7 @@ public class EditorController {
             } else {
                 // No scrolling
                 if (scrollPane.getStyleClass().contains("hidden-scrollbars")) {
-                    event.consume();
+                    // event.consume(); temp removal to test feelings
                 }
                 }
         });
@@ -273,6 +327,10 @@ public class EditorController {
     }
 
     private void updateCursorPosition(MouseEvent e) {
+        if (panToggle.isSelected() || isPanning) {
+            return;
+        }
+
         double centerX = e.getX() - (canvasContainer.getWidth() / 2);
         double centerY = e.getY() - (canvasContainer.getHeight() / 2);
 
@@ -328,8 +386,11 @@ public class EditorController {
 
 
         }
-        projectsService.saveProject(currentProject);
-    }
+        originalProject.setWidth(currentProject.getWidth());
+        originalProject.setHeight(currentProject.getHeight());
+        originalProject.setLayers(new ArrayList<>(currentProject.getLayers()));
+
+        projectsService.saveProject(originalProject);    }
 
     @FXML
     private void handleExport(ActionEvent actionEvent) throws IOException {
@@ -370,9 +431,10 @@ public class EditorController {
 
         ButtonType webButton = new ButtonType("Export to Website");
         ButtonType zipButton = new ButtonType("Save as ZIP");
+        ButtonType pictureButton = new ButtonType("Save as Picture");
         ButtonType cancelButton = new ButtonType("Cancel", ButtonBar.ButtonData.CANCEL_CLOSE);
 
-        export.getDialogPane().getButtonTypes().setAll(webButton, zipButton, cancelButton);
+        export.getDialogPane().getButtonTypes().setAll(webButton, zipButton,pictureButton, cancelButton);
 
         Optional<ButtonType> result = export.showAndWait();
 
@@ -381,9 +443,37 @@ public class EditorController {
                 exportToWebsite();
             } else if (result.get() == zipButton) {
                 exportAsZip();
+            } else if (result.get() == pictureButton) {
+                exportAsPicture(previewImage);
             }
+
         }
 
+    }
+
+    private void exportAsPicture(WritableImage image) {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Export as PNG");
+        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("PNG Image", "*.png"));
+
+        String defaultName = "Project_" + currentProject.getId() + ".png";
+        if (currentProject.getTitle() != null && !currentProject.getTitle().isEmpty()) {
+            defaultName = currentProject.getTitle().replaceAll("\\s+", "_") + "_Export.png";
+        }
+        fileChooser.setInitialFileName(defaultName);
+
+        File imageFile = fileChooser.showSaveDialog(canvasContainer.getScene().getWindow());
+        if (imageFile == null) return;
+
+        try {
+            StorageService storageService = new StorageService();
+            storageService.exportProjectAsImage(image, imageFile);
+
+            new Alert(Alert.AlertType.INFORMATION, "Project successfully exported as a Picture!").showAndWait();
+
+        } catch (Exception e) {
+            new Alert(Alert.AlertType.ERROR, "Failed to save picture: " + e.getMessage()).showAndWait();
+        }
     }
 
     private void exportAsZip() {
@@ -493,7 +583,6 @@ public class EditorController {
         for(Node node : canvasContainer.getChildren()){
             if (node instanceof Canvas && node.getId().equals(layer.name)) {
                 this.currentCanvas = (Canvas) node;
-                drawing();
             }
         }
     }
@@ -517,63 +606,183 @@ public class EditorController {
     }
 
     private void drawing() {
-        GraphicsContext gc = currentCanvas.getGraphicsContext2D();
 
-        gc.setLineCap(StrokeLineCap.ROUND);
-        gc.setLineJoin(StrokeLineJoin.ROUND);
 
         canvasContainer.setOnMousePressed(e -> {
-            currentPaintCommand = new Paint(currentCanvas, 0, 0, currentCanvas.getWidth(), currentCanvas.getHeight());
+            if (currentCanvas == null) return;
 
-            double size = widthSlider.getValue();
-            Point2D p = currentCanvas.sceneToLocal(e.getSceneX(), e.getSceneY());
-            lastX = p.getX();
-            lastY = p.getY();
+            GraphicsContext gc = currentCanvas.getGraphicsContext2D();
 
-            if (eraserToggle != null && eraserToggle.isSelected()) {
-                gc.clearRect(lastX - size / 2, lastY - size / 2, size, size);
-            } else {
-                gc.setStroke(colorPicker.getValue());
-                gc.setLineWidth(size);
-                gc.beginPath();
-                gc.moveTo(lastX, lastY);
-                gc.stroke();
+            gc.setLineCap(StrokeLineCap.ROUND);
+            gc.setLineJoin(StrokeLineJoin.ROUND);
+
+            if (e.getButton() == MouseButton.MIDDLE || (e.getButton() == MouseButton.PRIMARY && panToggle.isSelected())) {
+                isPanning = true;
+                panStartX = e.getSceneX();
+                panStartY = e.getSceneY();
+                panStartHval = scrollPane.getHvalue();
+                panStartVval = scrollPane.getVvalue();
+
+                brushCursor.setVisible(false);
+                canvasContainer.setCursor(Cursor.CLOSED_HAND);
+                return;
+            }
+
+            if (e.getButton() == MouseButton.PRIMARY && (brushToggle.isSelected() || eraserToggle.isSelected() || shapeToggle.isSelected() || gradientToggle.isSelected())) {
+                currentPaintCommand = new Paint(currentCanvas, 0, 0, currentCanvas.getWidth(), currentCanvas.getHeight());
+
+                double size = widthSlider.getValue();
+                Point2D p = currentCanvas.sceneToLocal(e.getSceneX(), e.getSceneY());
+                lastX = p.getX();
+                lastY = p.getY();
+
+                if (eraserToggle != null && eraserToggle.isSelected()) {
+                    gc.clearRect(lastX - size / 2, lastY - size / 2, size, size);
+                } else if (shapeToggle != null && shapeToggle.isSelected() || (gradientToggle != null && gradientToggle.isSelected())){
+                    shapeStartX = lastX;
+                    shapeStartY = lastY;
+
+                    SnapshotParameters params = new SnapshotParameters();
+                    params.setFill(Color.TRANSPARENT);
+                    preShapeSnapshot = currentCanvas.snapshot(params, null);
+
+                } else {
+
+                    gc.setStroke(colorPicker.getValue());
+                    gc.setLineWidth(size);
+                    gc.beginPath();
+                    gc.moveTo(lastX, lastY);
+                    gc.stroke();
+                }
             }
         });
 
         canvasContainer.setOnMouseDragged(e -> {
-            double size = widthSlider.getValue();
-            Point2D p = currentCanvas.sceneToLocal(e.getSceneX(), e.getSceneY());
-            double currentX = p.getX();
-            double currentY = p.getY();
+            if (currentCanvas == null) return;
+            GraphicsContext gc = currentCanvas.getGraphicsContext2D();
 
-            if (eraserToggle != null && eraserToggle.isSelected()) {
+            if (isPanning) {
+                double deltaX = e.getSceneX() - panStartX;
+                double deltaY = e.getSceneY() - panStartY;
 
-                double distance = Math.hypot(currentX - lastX, currentY - lastY);
+                Bounds viewport = scrollPane.getViewportBounds();
+                Bounds content = zoomContainer.getBoundsInParent();
 
-                int steps = (int) (distance / (size / 4)) + 1;
-                double dx = (currentX - lastX) / steps;
-                double dy = (currentY - lastY) / steps;
+                double hRange = content.getWidth() - viewport.getWidth();
+                double vRange = content.getHeight() - viewport.getHeight();
 
-                for (int i = 0; i < steps; i++) {
-                    gc.clearRect(lastX + (dx * i) - size / 2, lastY + (dy * i) - size / 2, size, size);
+                if (hRange > 0) {
+                    scrollPane.setHvalue(Math.clamp(panStartHval - (deltaX / hRange), 0, 1));
                 }
-            } else {
-                gc.setStroke(colorPicker.getValue());
-                gc.setLineWidth(size);
-                gc.lineTo(currentX, currentY);
-                gc.stroke();
+                if (vRange > 0) {
+                    scrollPane.setVvalue(Math.clamp(panStartVval - (deltaY / vRange), 0, 1));
+                }
+                return;
             }
 
-            lastX = currentX;
-            lastY = currentY;
+            if (e.getButton() == MouseButton.PRIMARY && (brushToggle.isSelected() || eraserToggle.isSelected() || shapeToggle.isSelected() || gradientToggle.isSelected())) {
+
+                double size = widthSlider.getValue();
+                Point2D p = currentCanvas.sceneToLocal(e.getSceneX(), e.getSceneY());
+                double currentX = p.getX();
+                double currentY = p.getY();
+
+                if (eraserToggle != null && eraserToggle.isSelected()) {
+
+                    double distance = Math.hypot(currentX - lastX, currentY - lastY);
+
+                    int steps = (int) (distance / (size / 4)) + 1;
+                    double dx = (currentX - lastX) / steps;
+                    double dy = (currentY - lastY) / steps;
+
+                    for (int i = 0; i < steps; i++) {
+                        gc.clearRect(lastX + (dx * i) - size / 2, lastY + (dy * i) - size / 2, size, size);
+                    }
+                } else if (shapeToggle != null && shapeToggle.isSelected()) {
+                    gc.clearRect(0, 0, currentCanvas.getWidth(), currentCanvas.getHeight());
+
+                    if (preShapeSnapshot != null) {
+                        gc.drawImage(preShapeSnapshot, 0, 0);
+                    }
+
+                    double x = Math.min(shapeStartX, currentX);
+                    double y = Math.min(shapeStartY, currentY);
+                    double w = Math.abs(currentX - shapeStartX);
+                    double h = Math.abs(currentY - shapeStartY);
+
+                    gc.setLineWidth(size);
+                    Color color = colorPicker.getValue();
+                    boolean fill = shapeFillToggle.isSelected();
+                    String shapeType = shapeTypeComboBox.getValue();
+
+                    if (fill) gc.setFill(color);
+                    else gc.setStroke(color);
+
+                    switch (shapeType) {
+                        case "Rectangle" -> {
+                            if (fill) gc.fillRect(x, y, w, h);
+                            else gc.strokeRect(x, y, w, h);
+                        }
+                        case "Oval" -> {
+                            if (fill) gc.fillOval(x, y, w, h);
+                            else gc.strokeOval(x, y, w, h);
+                        }
+                        case "Line" -> {
+                            gc.setStroke(color);
+                            gc.strokeLine(shapeStartX, shapeStartY, currentX, currentY);
+                        }
+                    }
+                }else if (gradientToggle != null && gradientToggle.isSelected()) {
+                    gc.clearRect(0, 0, currentCanvas.getWidth(), currentCanvas.getHeight());
+
+                    if (preShapeSnapshot != null) {
+                        gc.drawImage(preShapeSnapshot, 0, 0);
+                    }
+
+                    Color color1 = colorPicker.getValue();
+                    Color color2 = secondaryColorPicker.getValue();
+
+                    Stop[] stops = new Stop[]{
+                            new Stop(0, color1),
+                            new Stop(1, color2)
+                    };
+
+                    LinearGradient gradient = new LinearGradient(shapeStartX, shapeStartY, currentX, currentY, false, CycleMethod.NO_CYCLE, stops);
+
+                    gc.setFill(gradient);
+                    gc.fillRect(0, 0, currentCanvas.getWidth(), currentCanvas.getHeight());
+
+                    gc.setStroke(Color.color(0.5, 0.5, 0.5, 0.5));
+                    gc.setLineWidth(1.5);
+                    gc.strokeLine(shapeStartX, shapeStartY, currentX, currentY);
+                } else {
+                    gc.setStroke(colorPicker.getValue());
+                    gc.setLineWidth(size);
+                    gc.lineTo(currentX, currentY);
+                    gc.stroke();
+
+                }
+
+                lastX = currentX;
+                lastY = currentY;
+            }
         });
 
         canvasContainer.setOnMouseReleased(e -> {
-            if (currentPaintCommand != null) {
+
+            if (isPanning) {
+                isPanning = false;
+                canvasContainer.setCursor(panToggle.isSelected() ? Cursor.OPEN_HAND : Cursor.NONE);
+                if (!panToggle.isSelected()) brushCursor.setVisible(true);
+                return;
+            }
+
+
+            if (e.getButton() == MouseButton.PRIMARY && currentPaintCommand != null) {
                 currentPaintCommand.savePresent();
                 historyService.addCommand(currentPaintCommand);
                 currentPaintCommand = null;
+                preShapeSnapshot = null;
             }
         });
     }
@@ -589,47 +798,24 @@ public class EditorController {
     }
 
     @FXML
-    private void handleAddLayer(ActionEvent actionEvent) {
-        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-        alert.setTitle("New Layer");
-        alert.setHeaderText("What kind of layer do you need ?");
-        ButtonType cancel = new ButtonType("Cancel", ButtonBar.ButtonData.CANCEL_CLOSE);
-        ButtonType challengeButton = new ButtonType("Challenge Layer");
-        ButtonType empty = new ButtonType("Empty Layer");
-
-        alert.getButtonTypes().setAll(empty,challengeButton,cancel);
-
-        Optional<ButtonType> result = alert.showAndWait();
-
-        if (result.isEmpty() || result.get() == cancel) {
-                return;
+    private void handleAddLayer(MouseEvent actionEvent) {
+        if (actionEvent.getButton() == MouseButton.PRIMARY) {
+            createLayer(false);
         }
+        else if (actionEvent.getButton() == MouseButton.SECONDARY) {
+            ContextMenu contextMenu = new ContextMenu();
 
-        String newName = "Layer " + (layerListModel.size() + 1);
-        SpriteLayer newLayer = new SpriteLayer(newName, 800, 600);
+            MenuItem emptyItem = new MenuItem("Empty Layer");
+            emptyItem.setOnAction(e -> createLayer(false));
 
-        Canvas newCanvas = new Canvas(currentProject.getWidth(), currentProject.getHeight());
-        newCanvas.setId(newName);
+            MenuItem challengeItem = new MenuItem("Challenge Layer");
+            challengeItem.setOnAction(e -> createLayer(true));
 
-        if ( result.get() == challengeButton) {
-            try {
-                int projectWidth = currentProject.getWidth();
-                int projectHeight = currentProject.getHeight();
-                newLayer = challengesService.generateChallengeLayer(projectWidth, projectHeight, newName);
+            contextMenu.getItems().addAll(emptyItem, challengeItem);
 
-                newCanvas.getGraphicsContext2D().drawImage(newLayer.getImage(), 0, 0);
-            } catch(Exception e) {
-                Alert error = new Alert(Alert.AlertType.ERROR);
-                error.setTitle("ERROR");
-                error.setHeaderText("Image fail to load");
-                error.showAndWait();
-            }
+            Node source = (Node) actionEvent.getSource();
+            contextMenu.show(source, javafx.geometry.Side.BOTTOM, 0, 0);
         }
-
-        layerListModel.addFirst(newLayer);
-        canvasContainer.getChildren().add(newCanvas);
-        syncCanvasOrder();
-        layerListView.getSelectionModel().select(newLayer);
     }
 
     @FXML
@@ -718,17 +904,33 @@ public class EditorController {
         SnapshotParameters parameters = new SnapshotParameters();
         parameters.setFill(Color.TRANSPARENT);
 
+        boolean topOgVis = topCanvas.isVisible();
+        double topOgOpac = topCanvas.getOpacity();
+        topCanvas.setVisible(true);
+        topCanvas.setOpacity(1.0);
+        WritableImage topImage = topCanvas.snapshot(parameters, null);
+        topCanvas.setVisible(topOgVis);
+        topCanvas.setOpacity(topOgOpac);
+
+        boolean botOgVis = bottomCanvas.isVisible();
+        double botOgOpac = bottomCanvas.getOpacity();
+        bottomCanvas.setVisible(true);
+        bottomCanvas.setOpacity(1.0);
+        WritableImage bottomImage = bottomCanvas.snapshot(parameters, null);
+        bottomCanvas.setVisible(botOgVis);
+        bottomCanvas.setOpacity(botOgOpac);
+
         Canvas tempCanvas = new Canvas(topCanvas.getWidth(), topCanvas.getHeight());
         GraphicsContext gc = tempCanvas.getGraphicsContext2D();
 
         if (bottomLayer.isVisible() && bottomLayer.getImage() != null){
             gc.setGlobalAlpha(1.0);
-            gc.drawImage(bottomLayer.getImage(), 0, 0);
+            gc.drawImage(bottomImage, 0, 0);
         }
 
         if (topLayer.isVisible() && topLayer.getImage() != null){
             gc.setGlobalAlpha(1.0);
-            gc.drawImage(topLayer.getImage(), 0, 0);
+            gc.drawImage(topImage, 0, 0);
         }
 
         WritableImage mergedImage = tempCanvas.snapshot(parameters, null);
@@ -753,38 +955,25 @@ public class EditorController {
 
     @FXML
     private void handleApplyGrayscale(ActionEvent actionEvent) {
-        if (currentCanvas == null) return;
+        openFilterDialog(new GrayScaleFilter());
 
-        FilterCommand command = new FilterCommand(currentCanvas, new GrayScaleFilter());
-
-        historyService.addCommand(command);
     }
 
     @FXML
     private void handleApplySepia(ActionEvent actionEvent) {
-        if (currentCanvas == null) return;
+        openFilterDialog(new SepiaFilter());
 
-        FilterCommand command = new FilterCommand(currentCanvas, new SepiaFilter());
-
-        historyService.addCommand(command);
     }
 
     @FXML
     private void handleApplySharpen(ActionEvent actionEvent) {
-        if (currentCanvas == null) return;
-
-        FilterCommand command = new FilterCommand(currentCanvas, new SharpFilter());
-
-        historyService.addCommand(command);
+        openFilterDialog(new SharpFilter());
     }
 
     @FXML
     private void handleApplyBlur(ActionEvent actionEvent) {
-        if (currentCanvas == null) return;
+        openFilterDialog(new BlurFilter());
 
-        FilterCommand command = new FilterCommand(currentCanvas, new BlurFilter());
-
-        historyService.addCommand(command);
     }
 
     @FXML
@@ -825,35 +1014,13 @@ public class EditorController {
 
 
     @FXML
-    private void handleBrightness(ActionEvent actionEvent) {
-        if (currentCanvas == null) return;
-        Dialog<Integer> brightness = new Dialog<>();
-        brightness.setTitle("Brightness Adjustment");
-        brightness.setHeaderText("How would you like to export your project?");
-
-        ButtonType applyButton = new ButtonType("Apply");
-        ButtonType cancelButton = new ButtonType("Cancel", ButtonBar.ButtonData.CANCEL_CLOSE);
-
-    }
-
-    @FXML
     private void handleApplyContrast(ActionEvent actionEvent) {
-
-        if (currentCanvas == null) return;
-
-        FilterCommand command = new FilterCommand(currentCanvas, new ContrastFilter((int) contrastSlider.getValue()));
-
-        historyService.addCommand(command);
-
+        openFilterDialog(new ContrastFilter());
     }
 
     @FXML
     private void handleApplyBrightness(ActionEvent actionEvent) {
-        if (currentCanvas == null) return;
-
-        FilterCommand command = new FilterCommand(currentCanvas, new BrightnessFilter((int) brightnessSlider.getValue()));
-
-        historyService.addCommand(command);
+        openFilterDialog(new BrightnessFilter());
     }
 
     private void handleApplyRotate(int rotation) {
@@ -1039,7 +1206,7 @@ public class EditorController {
             previewStage.show();
 
         } catch (IOException e) {
-            System.out.printf(String.valueOf(e));
+            e.printStackTrace();
             new Alert(Alert.AlertType.ERROR, "Failed to load the Preview Window.").showAndWait();
         }
     }
@@ -1184,8 +1351,30 @@ private void setupWorkspaceDimensions(double width, double height) {
             applyZoom(1.1, bounds.getWidth() / 2, bounds.getHeight() / 2);
         });
 
+        addAccelerator(accelerators, keys.getBind(Actions.ZOOM_OUT), () -> {
+            Bounds bounds = scrollPane.getViewportBounds();
+            applyZoom(1 / 1.1, bounds.getWidth() / 2, bounds.getHeight() / 2);
+        });
+
+        addAccelerator(accelerators, keys.getBind(Actions.RESET_ZOOM), () ->
+                applyZoom(1.0 / zoomContainer.getScaleX(),
+                        scrollPane.getViewportBounds().getWidth() / 2,
+                        scrollPane.getViewportBounds().getHeight() / 2
+                ));
+
+        addAccelerator(accelerators, keys.getBind(Actions.TOOL_BRUSH), () -> brushToggle.setSelected(true));
         addAccelerator(accelerators, keys.getBind(Actions.TOOL_ERASER), () -> eraserToggle.setSelected(true));
-        addAccelerator(accelerators, keys.getBind(Actions.TOOL_BRUSH), () -> eraserToggle.setSelected(false));
+        addAccelerator(accelerators, keys.getBind(Actions.GRABBING), () -> panToggle.setSelected(true));
+
+        addAccelerator(accelerators, keys.getBind(Actions.VERTICAL_FLIP), () -> handleApplyVerticalReflect(new ActionEvent()));
+
+        addAccelerator(accelerators, keys.getBind(Actions.HORIZONTAL_FLIP), () -> handleApplyReflect(new ActionEvent()));
+
+        addAccelerator(accelerators, keys.getBind(Actions.CHALLENGE_LAYER), () -> createLayer(true));
+
+        addAccelerator(accelerators, keys.getBind(Actions.EMPTY_LAYER), () -> createLayer(false));
+        addAccelerator(accelerators, keys.getBind(Actions.RESIZING), () -> handleResize(new ActionEvent()));
+
 
     }
 
@@ -1204,7 +1393,266 @@ private void setupWorkspaceDimensions(double width, double height) {
             Main.changeScene("/view/settings-view.fxml");
             handleSave(new ActionEvent());
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("e: ", e);
         }
+    }
+
+    private void setupManualTooltips(Parent parent) {
+
+        List<Node> children = new ArrayList<>();
+        if (parent instanceof ToolBar) {
+            children.addAll(((ToolBar) parent).getItems());
+        } else {
+            children.addAll(parent.getChildrenUnmodifiable());
+        }
+
+        for (Node node : children) {
+            if (node instanceof Control) {
+                Control control = (Control) node;
+                Tooltip fxmlTooltip = control.getTooltip();
+
+                if (fxmlTooltip != null) {
+                    String exactText = fxmlTooltip.getText();
+
+                    control.setTooltip(null);
+
+                    Tooltip manualTooltip = new Tooltip(exactText);
+                    manualTooltip.setShowDelay(Duration.millis(250));
+                    Tooltip.install(control, manualTooltip);
+                }
+            }
+
+            if (node instanceof Parent) {
+                setupManualTooltips((Parent) node);
+            }
+        }
+    }
+
+    private void createLayer(boolean isChallengeLayer) {
+        String newName = "Layer " + (layerListModel.size() + 1);
+        SpriteLayer newLayer = new SpriteLayer(newName, 800, 600);
+
+        Canvas newCanvas = new Canvas(currentProject.getWidth(), currentProject.getHeight());
+        newCanvas.setId(newName);
+
+        if (isChallengeLayer) {
+            try {
+                int projectWidth = currentProject.getWidth();
+                int projectHeight = currentProject.getHeight();
+                newLayer = challengesService.generateChallengeLayer(projectWidth, projectHeight, newName);
+
+                newCanvas.getGraphicsContext2D().drawImage(newLayer.getImage(), 0, 0);
+            } catch(Exception e) {
+                Alert error = new Alert(Alert.AlertType.ERROR);
+                error.setTitle("ERROR");
+                error.setHeaderText("Image failed to load");
+                error.showAndWait();
+                return;
+            }
+        }
+
+        layerListModel.addFirst(newLayer);
+        canvasContainer.getChildren().add(newCanvas);
+        syncCanvasOrder();
+        layerListView.getSelectionModel().select(newLayer);
+    }
+
+    @FXML
+    private void handleResize(ActionEvent actionEvent) {
+        Dialog<Pair<String, String>> dialog = new Dialog<>();
+        dialog.setTitle("Resizing");
+        dialog.setHeaderText("Please enter the new dimensions.");
+
+        ButtonType applyButtonType = new ButtonType("Apply", ButtonBar.ButtonData.OK_DONE);
+        dialog.getDialogPane().getButtonTypes().addAll(applyButtonType, ButtonType.CANCEL);
+
+        GridPane gridPane = new GridPane();
+        gridPane.setHgap(10);
+        gridPane.setVgap(10);
+        gridPane.setPadding(new Insets(20, 20, 10, 10));
+
+        TextField width = new TextField();
+        width.setPromptText("Width");
+        TextField height = new TextField();
+        height.setPromptText("Height");
+
+        gridPane.add(new Label("Width:"), 0, 0);
+        gridPane.add(width, 1, 0);
+        gridPane.add(new Label("Height:"), 0, 1);
+        gridPane.add(height, 1, 1);
+
+        dialog.getDialogPane().setContent(gridPane);
+
+        Platform.runLater(width::requestFocus);
+
+        dialog.setResultConverter(dialogButton -> {
+            if (dialogButton == applyButtonType) {
+                return new Pair<>(width.getText(), height.getText());
+            }
+            return null;
+        });
+
+        Optional<Pair<String, String>> result = dialog.showAndWait();
+
+        result.ifPresent(pair -> {
+            try {
+
+                int widthNum = Integer.parseInt(pair.getKey());
+                int heightNum = Integer.parseInt(pair.getValue());
+
+                if (widthNum <= 0 || heightNum <= 0) {
+                    new Alert(Alert.AlertType.ERROR, "Dimensions must be greater than zero!").showAndWait();
+                    return;
+                }
+
+               resize(heightNum,widthNum);
+            } catch (NumberFormatException e ){
+                new Alert(Alert.AlertType.ERROR, "Please enter valid numbers!").showAndWait();
+            }
+        });
+    }
+
+    private void resize(int height,int width){
+
+        SnapshotParameters params = new SnapshotParameters();
+        params.setFill(Color.TRANSPARENT);
+
+        for (Node node : canvasContainer.getChildren()) {
+            if (node instanceof Canvas canvas) {
+                for (SpriteLayer layer : layerListModel) {
+                    if (layer.getName().equals(canvas.getId())) {
+                        boolean ogVis = canvas.isVisible();
+                        double ogOp = canvas.getOpacity();
+
+                        canvas.setVisible(true);
+                        canvas.setOpacity(1.0);
+
+                        layer.setImage(canvas.snapshot(params, null));
+
+                        canvas.setVisible(ogVis);
+                        canvas.setOpacity(ogOp);
+                    }
+                }
+            }
+        }
+
+        currentProject.setWidth(width);
+        currentProject.setHeight(height);
+        setupWorkspaceDimensions(width, height);
+
+        for (Node node : canvasContainer.getChildren()) {
+            if (node instanceof Canvas canvas) {
+                canvas.setWidth(width);
+                canvas.setHeight(height);
+
+                GraphicsContext gc = canvas.getGraphicsContext2D();
+
+                gc.setImageSmoothing(false);
+                gc.clearRect(0, 0, width, height);
+
+                for (SpriteLayer layer : layerListModel) {
+                    if (layer.getName().equals(canvas.getId()) && layer.getImage() != null) {
+
+                        gc.drawImage(layer.getImage(), 0, 0, width, height);
+
+                        boolean ogVis = canvas.isVisible();
+                        double ogOp = canvas.getOpacity();
+
+                        canvas.setVisible(true);
+                        canvas.setOpacity(1.0);
+                        layer.setImage(canvas.snapshot(params, null));
+
+                        canvas.setVisible(ogVis);
+                        canvas.setOpacity(ogOp);
+                    }
+                }
+            }
+        }
+
+        Platform.runLater(this::fitImageToScreen);
+
+
+    }
+
+    private Project copy(Project original) {
+        Project copy = new Project();
+        copy.setId(original.getId());
+        copy.setTitle(original.getTitle());
+        copy.setChallengeId(original.getChallengeId());
+        copy.setWidth(original.getWidth());
+        copy.setHeight(original.getHeight());
+
+        List<SpriteLayer> copiedLayers = new ArrayList<>();
+        if (original.getLayers() != null) {
+            for (SpriteLayer layer : original.getLayers()) {
+                SpriteLayer layerCopy = new SpriteLayer(layer.getName(), original.getWidth(), original.getHeight());
+                layerCopy.setOpacity(layer.getOpacity());
+                layerCopy.setVisible(layer.isVisible());
+                layerCopy.setImage(layer.getImage());
+                copiedLayers.add(layerCopy);
+            }
+        }
+        copy.setLayers(copiedLayers);
+        return copy;
+    }
+
+
+    private void openFilterDialog(Filter baseFilter) {
+        if (currentCanvas == null) return;
+
+        if (!(baseFilter instanceof AdjustableFilter filter)) {
+            historyService.addCommand(new FilterCommand(currentCanvas, baseFilter));
+            return;
+        }
+
+        SnapshotParameters params = new SnapshotParameters();
+        params.setFill(Color.TRANSPARENT);
+        WritableImage fullOriginal = currentCanvas.snapshot(params, null);
+
+        double scale = 300.0 / Math.max(fullOriginal.getWidth(), fullOriginal.getHeight());
+        int thumbW = Math.max(1, (int) (fullOriginal.getWidth() * scale));
+        int thumbH = Math.max(1, (int) (fullOriginal.getHeight() * scale));
+
+        Canvas thumbCanvas = new Canvas(thumbW, thumbH);
+        thumbCanvas.getGraphicsContext2D().drawImage(fullOriginal, 0, 0, thumbW, thumbH);
+        WritableImage previewOriginal = thumbCanvas.snapshot(params, null);
+
+        Dialog<Boolean> dialog = new Dialog<>();
+        dialog.setTitle(filter.getName() + " Adjustment");
+
+        ImageView beforeView = new ImageView(previewOriginal);
+        ImageView afterView = new ImageView(previewOriginal);
+
+        HBox imageBox = new HBox(15,
+                new VBox(5, new Label("Before"), beforeView),
+                new VBox(5, new Label("After"), afterView)
+        );
+        imageBox.setAlignment(Pos.CENTER);
+
+        Slider slider = new Slider(filter.getMinIntensity(), filter.getMaxIntensity(), filter.getDefaultIntensity());
+        slider.setShowTickMarks(true);
+        slider.setShowTickLabels(true);
+
+        VBox content = new VBox(15, imageBox, new Label("Intensity:"), slider);
+        content.setAlignment(Pos.CENTER);
+        dialog.getDialogPane().setContent(content);
+
+        slider.valueProperty().addListener((obs, oldVal, newVal) -> {
+            filter.setIntensity(newVal.doubleValue());
+
+            afterView.setImage(filter.apply(previewOriginal));
+        });
+
+        filter.setIntensity(slider.getValue());
+        afterView.setImage(filter.apply(previewOriginal));
+
+        dialog.getDialogPane().getButtonTypes().addAll(ButtonType.APPLY, ButtonType.CANCEL);
+        dialog.setResultConverter(btn -> btn == ButtonType.APPLY);
+
+        Optional<Boolean> result = dialog.showAndWait();
+        if (result.orElse(false)) {
+            historyService.addCommand(new FilterCommand(currentCanvas, filter));
+        }
+
     }
 }

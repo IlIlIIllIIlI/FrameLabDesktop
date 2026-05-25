@@ -9,7 +9,7 @@ public class ContrastFilterTest {
     @Test
     void shouldReturnCorrectName() {
         // ARRANGE
-        ContrastFilter filter = new ContrastFilter(50);
+        ContrastFilter filter = new ContrastFilter();
 
         // ACT
         String name = filter.getName();
@@ -21,7 +21,7 @@ public class ContrastFilterTest {
     @Test
     void shouldReturnSamePixelIfTransparent() {
         // ARRANGE
-        ContrastFilter filter = new ContrastFilter(100);
+        ContrastFilter filter = new ContrastFilter();
         int transparentPixel = 0x00FF00FF; // Alpha is 00
 
         // ACT
@@ -34,7 +34,7 @@ public class ContrastFilterTest {
     @Test
     void shouldNotChangeColorsWhenIntensityIsZero() {
         // ARRANGE
-        ContrastFilter filter = new ContrastFilter(0);
+        ContrastFilter filter = new ContrastFilter();
         int originalPixel = 0xFF64A0C8; // A=255, R=100, G=160, B=200
 
         // ACT
@@ -47,7 +47,7 @@ public class ContrastFilterTest {
     @Test
     void shouldPushColorsToExtremesWhenIntensityIsHigh() {
         // ARRANGE
-        ContrastFilter filter = new ContrastFilter(255);
+        ContrastFilter filter = new ContrastFilter();
 
         int inputPixel = 0xFF827E80; // A=255, R=130 (>128), G=126 (<128), B=128
 
@@ -64,7 +64,7 @@ public class ContrastFilterTest {
     @Test
     void shouldPullColorsTowardsGrayWhenIntensityIsNegative() {
         // ARRANGE
-        ContrastFilter filter = new ContrastFilter(-100);
+        ContrastFilter filter = new ContrastFilter();
 
         int inputPixel = 0xFF00FF80; // A=255, R=0, G=255, B=128
 

@@ -10,35 +10,77 @@
 <?import org.kordamp.ikonli.javafx.FontIcon?>
 <?import javafx.scene.Group?>
 <?import javafx.scene.effect.DropShadow?>
+<?import javafx.collections.FXCollections?>
+<?import java.lang.String?>
 <BorderPane xmlns="http://javafx.com/javafx"
             xmlns:fx="http://javafx.com/fxml"
             fx:controller="com.frameLab.frameSprite.controller.EditorController"
             stylesheets="@../css/editor-view.css"
+            fx:id="editorRoot"
             styleClass="editor-root"
             prefHeight="700.0" prefWidth="1000.0">
 
     <top>
         <VBox BorderPane.alignment="CENTER">
             <ToolBar styleClass="editor-toolbar">
-                <Button styleClass="editor-button" onAction="#handleGoBack" text="← Menu" />
+                <Button styleClass="editor-button" onAction="#handleGoBack">
+                    <graphic>
+                        <FontIcon iconLiteral="mdi2a-arrow-left" iconSize="18" />
+                    </graphic>
+                    <tooltip>
+                        <Tooltip text="Back to Menu" />
+                    </tooltip>
+                </Button>
                 <Separator styleClass="editor-separator" />
-                <Button styleClass="editor-button" onAction="#handleSave" text="Save" />
-                <Button styleClass="editor-button" onAction="#handleExport" text="Export" />
-                <Button styleClass="editor-button" onAction="#handleShowInfo" text="Info">
+                <Button styleClass="editor-button" onAction="#handleSave">
+                    <graphic>
+                        <FontIcon iconLiteral="mdi2c-content-save" iconSize="18" />
+                    </graphic>
+                    <tooltip>
+                        <Tooltip text="Save Project" />
+                    </tooltip>
+                </Button>
+                <Button styleClass="editor-button" onAction="#handleExport">
+                    <graphic>
+                        <FontIcon iconLiteral="mdi2e-export" iconSize="18" />
+                    </graphic>
+                    <tooltip>
+                        <Tooltip text="Export Project" />
+                    </tooltip>
+                </Button>
+                <Button styleClass="editor-button" onAction="#handleShowInfo">
                     <graphic>
                         <FontIcon iconLiteral="mdi2i-information-outline" iconSize="18" />
                     </graphic>
+                    <tooltip>
+                        <Tooltip text="Project Info &amp; Details" />
+                    </tooltip>
                 </Button>
-                <Button styleClass="editor-button" onAction="#handleShowPreview" text="Preview">
+                <Button styleClass="editor-button" onAction="#handleShowPreview">
                     <graphic>
                         <FontIcon iconLiteral="mdi2c-compare" iconSize="18" />
                     </graphic>
+                    <tooltip>
+                        <Tooltip text="Compare Before &amp; After" />
+                    </tooltip>
                 </Button>
 
-                <Button styleClass="editor-button" onAction="#handleSettings" text="Settings">
+                <Button styleClass="editor-button" onAction="#handleResize">
+                    <graphic>
+                        <FontIcon iconLiteral="mdi2m-move-resize" iconSize="18" />
+                    </graphic>
+                    <tooltip>
+                        <Tooltip text="Resize Project" />
+                    </tooltip>
+                </Button>
+
+                <Button styleClass="editor-button" onAction="#handleSettings">
                     <graphic>
                         <FontIcon iconLiteral="mdi2c-cog" iconSize="18" />
                     </graphic>
+                    <tooltip>
+                        <Tooltip text="Editor Settings &amp; Shortcuts" />
+                    </tooltip>
                 </Button>
 
 
@@ -47,33 +89,140 @@
                     <graphic>
                         <FontIcon iconLiteral="mdi2u-undo" iconSize="18" />
                     </graphic>
+                    <tooltip>
+                        <Tooltip text="Undo Last Action" />
+                    </tooltip>
                 </Button>
 
                 <Button onAction="#handleRedo">
                     <graphic>
                         <FontIcon iconLiteral="mdi2r-redo" iconSize="18" />
                     </graphic>
+                    <tooltip>
+                        <Tooltip text="Redo Action" />
+                    </tooltip>
                 </Button>
             </ToolBar>
 
             <ToolBar styleClass="editor-toolbar">
-                <Label styleClass="editor-label" text="Color:" />
+                <Label styleClass="editor-label">
+                    <graphic>
+                        <FontIcon iconLiteral="mdi2p-palette" iconSize="18" />
+                    </graphic>
+                    <tooltip>
+                        <Tooltip text="Brush Color" />
+                    </tooltip>
+                </Label>
                 <ColorPicker fx:id="colorPicker" styleClass="editor-color-picker">
                     <value>
                         <Color fx:constant="BLACK" />
                     </value>
+                    <tooltip>
+                        <Tooltip text="Primary Color" />
+                    </tooltip>
+                </ColorPicker>
+
+                <ColorPicker fx:id="secondaryColorPicker" styleClass="editor-color-picker">
+                    <value>
+                        <Color fx:constant="TRANSPARENT" />
+                    </value>
+                    <tooltip>
+                        <Tooltip text="Secondary Color (For Gradients)" />
+                    </tooltip>
                 </ColorPicker>
 
                 <Separator styleClass="editor-separator" />
-                <ToggleButton fx:id="eraserToggle" styleClass="editor-toggle" text="Eraser" />
+
+                <ToggleButton fx:id="brushToggle" styleClass="editor-toggle" selected="true">
+                    <graphic>
+                        <FontIcon iconLiteral="mdi2b-brush" iconSize="18" />
+                    </graphic>
+                    <tooltip>
+                        <Tooltip text="Brush Tool" />
+                    </tooltip>
+                </ToggleButton>
+
+                <ToggleButton fx:id="eraserToggle" styleClass="editor-toggle">
+                    <graphic>
+                        <FontIcon iconLiteral="mdi2e-eraser" iconSize="18" />
+                    </graphic>
+                    <tooltip>
+                        <Tooltip text="Eraser Tool" />
+                    </tooltip>
+                </ToggleButton>
+
+                <ToggleButton fx:id="panToggle" styleClass="editor-toggle">
+                    <graphic>
+                        <FontIcon iconLiteral="mdi2a-arrow-all" iconSize="18" />
+                    </graphic>
+                    <tooltip>
+                        <Tooltip text="Pan Tool (Middle Mouse)" />
+                    </tooltip>
+                </ToggleButton>
+
                 <Separator styleClass="editor-separator" />
 
-                <Label styleClass="editor-label" text="Size:" />
-                <Slider fx:id="widthSlider" styleClass="editor-slider" min="1" max="50" value="5.0" prefWidth="100" />
+
+                <ToggleButton fx:id="gradientToggle" styleClass="editor-toggle">
+                    <graphic>
+                        <FontIcon iconLiteral="mdi2g-gradient-horizontal" iconSize="18" />
+                    </graphic>
+                    <tooltip>
+                        <Tooltip text="Gradient Fill Tool" />
+                    </tooltip>
+                </ToggleButton>
+
+                <ToggleButton fx:id="shapeToggle" styleClass="editor-toggle">
+                    <graphic>
+                        <FontIcon iconLiteral="mdi2s-shape-outline" iconSize="18" />
+                    </graphic>
+                    <tooltip>
+                        <Tooltip text="Shape Tool" />
+                    </tooltip>
+                </ToggleButton>
+
+                <ComboBox fx:id="shapeTypeComboBox" prefWidth="110" value="Rectangle" >
+                    <items>
+                        <FXCollections fx:factory="observableArrayList">
+                            <String fx:value="Rectangle" />
+                            <String fx:value="Oval" />
+                            <String fx:value="Line" />
+                        </FXCollections>
+                    </items>
+                </ComboBox>
+
+                <ToggleButton fx:id="shapeFillToggle" styleClass="editor-toggle">
+                    <graphic>
+                        <FontIcon iconLiteral="mdi2f-format-color-fill" iconSize="18" />
+                    </graphic>
+                    <tooltip>
+                        <Tooltip text="Toggle Shape Fill (Solid/Hollow)" />
+                    </tooltip>
+                </ToggleButton>
+
+                <Label styleClass="editor-label">
+                    <graphic>
+                        <FontIcon iconLiteral="mdi2r-radius-outline" iconSize="18" />
+                    </graphic>
+                    <tooltip>
+                        <Tooltip text="Brush Size" />
+                    </tooltip>
+                </Label>
+                <Slider fx:id="widthSlider" styleClass="editor-slider" min="1" max="50" value="5.0" prefWidth="100">
+                    <tooltip>
+                        <Tooltip text="Adjust Brush Size" />
+                    </tooltip>
+                </Slider>
 
                 <Separator styleClass="editor-separator" />
 
-                <MenuButton styleClass="editor-menu" text="Image Filters">
+                <MenuButton styleClass="editor-menu">
+                    <graphic>
+                        <FontIcon iconLiteral="mdi2f-filter-variant" iconSize="18" />
+                    </graphic>
+                    <tooltip>
+                        <Tooltip text="Image Filters" />
+                    </tooltip>
                     <items>
                         <MenuItem onAction="#handleApplyGrayscale" text="Black &amp; White" />
                         <MenuItem onAction="#handleApplySepia" text="Sepia" />
@@ -83,22 +232,32 @@
                         <MenuItem onAction="#handleApplyEdge" text="Edge Detection" />
                         <MenuItem onAction="#handleApplyReflect" text="Horizontal Reflect" />
                         <MenuItem onAction="#handleApplyVerticalReflect" text="Vertical Reflect" />
+                        <MenuItem onAction="#handleApplyBrightness" text="Brightness"/>
+                        <MenuItem onAction="#handleApplyContrast" text="Contrast"/>
                     </items>
                 </MenuButton>
 
-                <Button text="Nuke Project" onAction="#handleNuke" textFill="RED"/>
+                <Button onAction="#handleNuke" styleClass="editor-button danger">
+                    <graphic>
+                        <FontIcon iconLiteral="mdi2n-nuke" iconSize="18" styleClass="nuke-icon" />
+                    </graphic>
+                    <tooltip>
+                        <Tooltip text="Nuke Project (Reset Everything)" />
+                    </tooltip>
+                </Button>
 
                 <Separator styleClass="editor-separator" />
 
-                <Label styleClass="editor-label" text="Rotate:" />
-                <Slider fx:id="rotateSlider" styleClass="editor-slider" max="360" prefWidth="80" />
+                <Label styleClass="editor-label">
+                    <graphic>
+                    <FontIcon iconLiteral="mdi2r-rotate-right" iconSize="18" />
+                    </graphic>
+                    <tooltip>
+                        <Tooltip text="Rotate Canvas" />
+                    </tooltip>
+                </Label>
 
-                <Label styleClass="editor-label" text="Bright:" />
-                <Slider fx:id="brightnessSlider" styleClass="editor-slider" max="255" min="-255" prefWidth="80" />
-                <Button styleClass="editor-button" onAction="#handleApplyBrightness" text="Apply" />
-                    <Label styleClass="editor-label" text="Contrast: " />
-                    <Slider fx:id="contrastSlider" min="-100" />
-                    <Button styleClass="editor-button" text="Apply" onAction="#handleApplyContrast" />
+                <Slider fx:id="rotateSlider" styleClass="editor-slider" max="360" prefWidth="80" />
             </ToolBar>
         </VBox>
     </top>
@@ -145,13 +304,54 @@
             </Label>
 
             <ToolBar styleClass="editor-layer-toolbar">
-                <Button styleClass="editor-button" onAction="#handleAddLayer" text="+" />
-                <Button styleClass="editor-button" onAction="#handleDeleteLayer" text="-" />
+                <Button styleClass="editor-button" onMouseClicked="#handleAddLayer">
+                    <graphic>
+                        <FontIcon iconLiteral="mdi2p-plus" iconSize="18" />
+                    </graphic>
+                    <tooltip>
+                        <Tooltip text="Add New Layer (Right-click for Challenge)" />
+                    </tooltip>
+                </Button>
+
+                <Button styleClass="editor-button" onAction="#handleDeleteLayer">
+                    <graphic>
+                        <FontIcon iconLiteral="mdi2t-trash-can-outline" iconSize="18" />
+                    </graphic>
+                    <tooltip>
+                        <Tooltip text="Delete Selected Layer" />
+                    </tooltip>
+                </Button>
+
                 <Separator styleClass="editor-separator" />
-                <Button styleClass="editor-button" onAction="#handleLayerUp" text="▲" />
-                <Button styleClass="editor-button" onAction="#handleLayerDown" text="▼" />
+
+                <Button styleClass="editor-button" onAction="#handleLayerUp">
+                    <graphic>
+                        <FontIcon iconLiteral="mdi2a-arrow-up" iconSize="18" />
+                    </graphic>
+                    <tooltip>
+                        <Tooltip text="Move Layer Up" />
+                    </tooltip>
+                </Button>
+
+                <Button styleClass="editor-button" onAction="#handleLayerDown">
+                    <graphic>
+                        <FontIcon iconLiteral="mdi2a-arrow-down" iconSize="18" />
+                    </graphic>
+                    <tooltip>
+                        <Tooltip text="Move Layer Down" />
+                    </tooltip>
+                </Button>
+
                 <Separator styleClass="editor-separator" />
-                <Button styleClass="editor-button" onAction="#handleMerge" text="Merge Down" />
+
+                <Button styleClass="editor-button" onAction="#handleMerge">
+                    <graphic>
+                        <FontIcon iconLiteral="mdi2m-merge" iconSize="18" />
+                    </graphic>
+                    <tooltip>
+                        <Tooltip text="Merge With Layer Below" />
+                    </tooltip>
+                </Button>
             </ToolBar>
 
             <ListView fx:id="layerListView" VBox.vgrow="ALWAYS" />

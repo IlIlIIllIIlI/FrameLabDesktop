@@ -1,13 +1,24 @@
 package com.frameLab.frameSprite.effect.filters.pixels;
 
-public class ContrastFilter extends PixelFilter{
-    int intensity;
+import com.frameLab.frameSprite.effect.filters.AdjustableFilter;
+
+public class ContrastFilter extends PixelFilter implements AdjustableFilter {
     double factor;
 
-    public ContrastFilter(int intensity){
-        this.intensity = intensity;
+    public ContrastFilter(){
+        this.setIntensity(getDefaultIntensity());
+    }
+
+    @Override
+    public void setIntensity(double intensity) {
         this.factor = (259.0 * (intensity + 255.0)) / (255.0 * (259.0 - intensity));
     }
+    @Override
+    public double getMinIntensity() { return -100.0; }
+    @Override
+    public double getMaxIntensity() { return 100.0; }
+    @Override
+    public double getDefaultIntensity() { return 0.0; }
 
     @Override
     public int processPixel(int argb) {

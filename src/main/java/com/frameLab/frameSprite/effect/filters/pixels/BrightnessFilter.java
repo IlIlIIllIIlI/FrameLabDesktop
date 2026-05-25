@@ -1,11 +1,21 @@
 package com.frameLab.frameSprite.effect.filters.pixels;
 
-public class BrightnessFilter extends PixelFilter{
-    int intensity;
+import com.frameLab.frameSprite.effect.filters.AdjustableFilter;
 
-    public BrightnessFilter(int intensity){
-        this.intensity = intensity;
+public class BrightnessFilter extends PixelFilter implements AdjustableFilter {
+    private double intensity;
+
+    public BrightnessFilter() {
+        this.intensity = getDefaultIntensity();
     }
+    @Override
+    public void setIntensity(double intensity) { this.intensity = intensity; }
+    @Override
+    public double getMinIntensity() { return -255.0; }
+    @Override
+    public double getMaxIntensity() { return 255.0; }
+    @Override
+    public double getDefaultIntensity() { return 0.0; }
 
     @Override
     public int processPixel(int argb) {
@@ -19,9 +29,9 @@ public class BrightnessFilter extends PixelFilter{
         int green = (argb >> 8) & 0xFF;
         int blue = argb & 0xFF;
 
-        int finalRed = Math.clamp(red + this.intensity, 0, 255);
-        int finalGreen = Math.clamp(green + this.intensity, 0, 255);
-        int finalBlue = Math.clamp(blue + this.intensity, 0, 255);
+        int finalRed = (int) Math.clamp(red + this.intensity, 0, 255);
+        int finalGreen = (int) Math.clamp(green + this.intensity, 0, 255);
+        int finalBlue = (int) Math.clamp(blue + this.intensity, 0, 255);
 
         return (alpha << 24) | (finalRed << 16) | (finalGreen << 8) | finalBlue;
     }
