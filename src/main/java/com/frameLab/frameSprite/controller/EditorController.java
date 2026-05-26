@@ -31,10 +31,7 @@ import javafx.geometry.Bounds;
 import javafx.geometry.Insets;
 import javafx.geometry.Point2D;
 import javafx.geometry.Pos;
-import javafx.scene.Cursor;
-import javafx.scene.Node;
-import javafx.scene.Parent;
-import javafx.scene.SnapshotParameters;
+import javafx.scene.*;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.*;
@@ -50,6 +47,7 @@ import javafx.scene.shape.Rectangle;
 import javafx.scene.shape.StrokeLineCap;
 import javafx.scene.shape.StrokeLineJoin;
 import javafx.stage.FileChooser;
+import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 import javafx.util.Pair;
@@ -169,23 +167,23 @@ public class EditorController {
         this.currentProject = copy(project);
         transparentGrid();
 
-        if (project.getLayers()==null){
-            project.setLayers(new ArrayList<>());
+        if (currentProject.getLayers()==null){
+            currentProject.setLayers(new ArrayList<>());
         }
 
-        if (project.getLayers().isEmpty()){
+        if (currentProject.getLayers().isEmpty()){
             loadChallengeBackground();
         } else {
             // If an old project was saved bottom-up, reverse it so top is foreground.
-            SpriteLayer firstLayer = project.getLayers().getFirst();
+            SpriteLayer firstLayer = currentProject.getLayers().getFirst();
             if (firstLayer.getName() != null && firstLayer.getName().equals("Challenge_Background") && project.getLayers().size() > 1) {
-                Collections.reverse(project.getLayers());
+                Collections.reverse(currentProject.getLayers());
             }
         }
 
         setupWorkspaceDimensions(currentProject.getWidth(), currentProject.getHeight());
 
-        this.layerListModel = FXCollections.observableList(project.getLayers());
+        this.layerListModel = FXCollections.observableList(currentProject.getLayers());
 
         layerListView.setItems(layerListModel);
         layerListView.setCellFactory(c ->new ListCell<SpriteLayer>() {
@@ -1192,16 +1190,16 @@ public class EditorController {
 
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/preview-item.fxml"));
-            javafx.scene.Parent root = loader.load();
+            Parent root = loader.load();
 
             PreviewController controller = loader.getController();
             controller.initData(originalImage, editedImage);
 
             Stage previewStage = new Stage();
             previewStage.setTitle("Before & After");
-            previewStage.setScene(new javafx.scene.Scene(root));
+            previewStage.setScene(new Scene(root));
 
-            previewStage.initModality(javafx.stage.Modality.APPLICATION_MODAL);
+            previewStage.initModality(Modality.APPLICATION_MODAL);
 
             previewStage.show();
 
