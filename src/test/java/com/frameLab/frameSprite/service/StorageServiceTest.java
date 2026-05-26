@@ -37,8 +37,7 @@ public class StorageServiceTest {
     void shouldGetPreviewPath() {
         // ARRANGE
         int projectId = 99;
-        String expectedSuffix = "99" + File.separator + "preview.png";
-
+        String expectedSuffix = "99/preview.png";
         // ACT
         String result = storageService.getPreviewPath(projectId);
 

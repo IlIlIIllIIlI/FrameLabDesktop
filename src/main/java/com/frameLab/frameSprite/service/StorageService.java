@@ -155,9 +155,8 @@ public class StorageService {
             throw new IOException("File Doesn't exist : " + sourceDir);
         }
 
-        ZipOutputStream zos = new ZipOutputStream(new FileOutputStream(targetZipFile));
-
-        Files.walk(sourceDir)
+        try (ZipOutputStream zos = new ZipOutputStream(new FileOutputStream(targetZipFile))) {
+            Files.walk(sourceDir)
                     .filter(path -> !Files.isDirectory(path))
                     .forEach(path -> {
                         try {
@@ -169,6 +168,7 @@ public class StorageService {
                             throw new RuntimeException("Can't compress file : " + path, e);
                         }
                     });
+        }
 
     }
 

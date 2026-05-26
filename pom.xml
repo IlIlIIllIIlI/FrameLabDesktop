@@ -124,7 +124,7 @@
 
     <profiles>
         <profile>
-            <id>fat-jar</id>
+            <id>fat-jar-crossPlatform</id>
             <dependencies>
                 <!-- Windows -->
                 <dependency>
@@ -152,19 +152,6 @@
                     <version>${javafx.version}</version>
                     <classifier>linux</classifier>
                 </dependency>
-                <!-- macOS Intel -->
-                <dependency>
-                    <groupId>org.openjfx</groupId>
-                    <artifactId>javafx-graphics</artifactId>
-                    <version>${javafx.version}</version>
-                    <classifier>mac</classifier>
-                </dependency>
-                <dependency>
-                    <groupId>org.openjfx</groupId>
-                    <artifactId>javafx-base</artifactId>
-                    <version>${javafx.version}</version>
-                    <classifier>mac</classifier>
-                </dependency>
                 <!-- macOS Apple Silicon -->
                 <dependency>
                     <groupId>org.openjfx</groupId>
@@ -177,6 +164,24 @@
                     <artifactId>javafx-base</artifactId>
                     <version>${javafx.version}</version>
                     <classifier>mac-aarch64</classifier>
+                </dependency>
+            </dependencies>
+        </profile>
+        <profile>
+            <id>fat-jar-mac-intel</id>
+            <dependencies>
+                <!-- macOS Intel -->
+                <dependency>
+                    <groupId>org.openjfx</groupId>
+                    <artifactId>javafx-graphics</artifactId>
+                    <version>${javafx.version}</version>
+                    <classifier>mac</classifier>
+                </dependency>
+                <dependency>
+                    <groupId>org.openjfx</groupId>
+                    <artifactId>javafx-base</artifactId>
+                    <version>${javafx.version}</version>
+                    <classifier>mac</classifier>
                 </dependency>
             </dependencies>
         </profile>
