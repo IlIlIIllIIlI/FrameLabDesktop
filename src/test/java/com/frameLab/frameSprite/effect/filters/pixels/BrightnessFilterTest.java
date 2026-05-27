@@ -22,6 +22,7 @@ public class BrightnessFilterTest {
     void shouldReturnSamePixelIfTransparent() {
         // ARRANGE
         BrightnessFilter filter = new BrightnessFilter();
+        filter.setIntensity(50.0);
         int transparentPixel = 0x00123456; // Alpha is 00
 
         // ACT
@@ -35,6 +36,7 @@ public class BrightnessFilterTest {
     void shouldNotChangeColorsWhenIntensityIsZero() {
         // ARRANGE
         BrightnessFilter filter = new BrightnessFilter();
+        filter.setIntensity(0.0);
         int originalPixel = 0xFF64A0C8; // A=255, R=100, G=160, B=200
 
         // ACT
@@ -48,6 +50,7 @@ public class BrightnessFilterTest {
     void shouldIncreaseBrightnessCorrectly() {
         // ARRANGE
         BrightnessFilter filter = new BrightnessFilter();
+        filter.setIntensity(50.0);
         int inputPixel = 0xFF326496; // A=255, R=50, G=100, B=150
 
         // R = 50+50=100, G = 100+50=150, B = 150+50=200
@@ -64,6 +67,7 @@ public class BrightnessFilterTest {
     void shouldDecreaseBrightnessCorrectly() {
         // ARRANGE
         BrightnessFilter filter = new BrightnessFilter();
+        filter.setIntensity(-50.0);
         int inputPixel = 0xFF6496C8; // A=255, R=100, G=150, B=200
 
         // R = 100-50=50, G = 150-50=100, B = 200-50=150
@@ -80,6 +84,7 @@ public class BrightnessFilterTest {
     void shouldClampAt255WhenBrightnessIsTooHigh() {
         // ARRANGE
         BrightnessFilter filter = new BrightnessFilter();
+        filter.setIntensity(200.0);
         int inputPixel = 0xFF64C8FA; // A=255, R=100, G=200, B=250
 
         int expectedPixel = (255 << 24) | (255 << 16) | (255 << 8) | 255;
@@ -95,6 +100,7 @@ public class BrightnessFilterTest {
     void shouldClampAtZeroWhenBrightnessIsTooLow() {
         // ARRANGE
         BrightnessFilter filter = new BrightnessFilter();
+        filter.setIntensity(-200.0);
         int inputPixel = 0xFF643214; // A=255, R=100, G=50, B=20
 
 

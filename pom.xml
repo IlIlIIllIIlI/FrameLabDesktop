@@ -6,7 +6,7 @@
 
     <groupId>com.frameLab.frameSprite</groupId>
     <artifactId>FrameSprite</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <version>1.0</version>
 
     <properties>
         <javafx.version>21.0.2</javafx.version>
