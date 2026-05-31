@@ -421,7 +421,9 @@ public class EditorController {
         originalProject.setHeight(currentProject.getHeight());
         originalProject.setLayers(new ArrayList<>(currentProject.getLayers()));
 
-        projectsService.saveProject(originalProject);    }
+        projectsService.saveProject(originalProject);
+        currentProject.setId(originalProject.getId());
+    }
 
     @FXML
     private void handleExport(ActionEvent actionEvent) throws IOException {
@@ -471,7 +473,7 @@ public class EditorController {
 
         if (result.isPresent()) {
             if (result.get() == webButton) {
-                exportToWebsite();
+                exportToWebsite(previewImage);
             } else if (result.get() == zipButton) {
                 exportAsZip();
             } else if (result.get() == pictureButton) {
@@ -532,7 +534,16 @@ public class EditorController {
             new Alert(Alert.AlertType.ERROR, "Failed to create ZIP file: " + e.getMessage()).showAndWait();
         }
     }
-    private void exportToWebsite(){
+    private void exportToWebsite(WritableImage image){
+
+        File uploadFile = new File("projects/" + currentProject.getId() + "/full_res_upload.png");
+        try {
+            StorageService storageService = new StorageService();
+            storageService.exportProjectAsImage(image, uploadFile);
+        } catch (IOException e) {
+            new Alert(Alert.AlertType.ERROR, "Failed to process image for upload.").showAndWait();
+            return;
+        }
 
         Dialog<Void> loadingDialog = new Dialog<>();
         loadingDialog.setTitle("Exporting");
@@ -552,17 +563,15 @@ public class EditorController {
         Task<Void> uploadTask = new Task<Void>() {
             @Override
             protected Void call() throws Exception {
-                File previewFile = new File("projects/" + currentProject.getId() + "/preview.png");
-                if (!previewFile.exists()){
-                    throw new RuntimeException("No Preview image");
+                if (!uploadFile.exists()){
+                    throw new RuntimeException("High resolution image failed to generate.");
                 }
 
-
-               int responseCode = ApiUtils.uploadEntry(
-                       SessionUtils.getInstance().getUser().getId(),
-                       currentProject.getChallengeId(),
-                       previewFile
-               );
+                int responseCode = ApiUtils.uploadEntry(
+                        SessionUtils.getInstance().getUser().getId(),
+                        currentProject.getChallengeId(),
+                        uploadFile
+                );
 
                 if (responseCode == 404) {
                     throw new IllegalStateException("You already have an Entry for this challenge");
@@ -578,6 +587,7 @@ public class EditorController {
         };
 
         uploadTask.setOnSucceeded(e -> {
+            uploadFile.delete();
             loadingDialog.setResult(null);
             loadingDialog.close();
 
@@ -591,6 +601,7 @@ public class EditorController {
         });
 
         uploadTask.setOnFailed(e -> {
+            uploadFile.delete();
             loadingDialog.setResult(null);
             loadingDialog.close();
 
@@ -796,9 +807,6 @@ public class EditorController {
                     gc.setFill(gradient);
                     gc.fillRect(0, 0, currentCanvas.getWidth(), currentCanvas.getHeight());
 
-                    gc.setStroke(Color.color(0.5, 0.5, 0.5, 0.5));
-                    gc.setLineWidth(1.5);
-                    gc.strokeLine(shapeStartX, shapeStartY, currentX, currentY);
                 } else {
                     gc.setStroke(colorPicker.getValue());
                     gc.setLineWidth(size);

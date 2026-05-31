@@ -288,7 +288,7 @@
 
                             <StackPane fx:id="canvasContainer"/>
 
-                            <StackPane fx:id="uiOverlay" mouseTransparent="true">
+                            <StackPane fx:id="uiOverlay" mouseTransparent="true" styleClass="ui-overlay">
                                 <Circle fx:id="brushCursor" fill="TRANSPARENT" strokeWidth="2.0" stroke="BLACK" visible="false">
                                     <effect>
                                         <DropShadow color="BLACK" radius="2.0" spread="0.8" />
