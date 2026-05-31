@@ -27,10 +27,7 @@ import javafx.concurrent.Task;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
-import javafx.geometry.Bounds;
-import javafx.geometry.Insets;
-import javafx.geometry.Point2D;
-import javafx.geometry.Pos;
+import javafx.geometry.*;
 import javafx.scene.*;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
@@ -46,6 +43,9 @@ import javafx.scene.shape.Circle;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.shape.StrokeLineCap;
 import javafx.scene.shape.StrokeLineJoin;
+import javafx.scene.text.Font;
+import javafx.scene.text.Text;
+import javafx.scene.text.TextAlignment;
 import javafx.stage.FileChooser;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
@@ -60,6 +60,8 @@ import java.util.*;
 
 public class EditorController {
     private static final Logger log = LoggerFactory.getLogger(EditorController.class);
+    @FXML
+    private Text textCursor;
     @FXML
     private BorderPane editorRoot;
     @FXML
@@ -105,6 +107,12 @@ public class EditorController {
     @FXML
     private ToggleButton gradientToggle;
 
+    @FXML
+    private ToggleButton textToggle;
+    @FXML
+    private TextField textInputField;
+
+
     private ChallengesService challengesService;
     private HistoryService historyService;
     private Project currentProject;
@@ -137,6 +145,7 @@ public class EditorController {
         panToggle.setToggleGroup(toolGroup);
         shapeToggle.setToggleGroup(toolGroup);
         gradientToggle.setToggleGroup(toolGroup);
+        textToggle.setToggleGroup(toolGroup);
 
         toolGroup.selectedToggleProperty().addListener((obs, oldToggle, newToggle) -> {
             if (newToggle == null && oldToggle != null) {
@@ -275,8 +284,18 @@ public class EditorController {
         canvasContainer.addEventFilter(MouseEvent.MOUSE_MOVED, this::updateCursorPosition);
         canvasContainer.addEventFilter(MouseEvent.MOUSE_DRAGGED, this::updateCursorPosition);
 
-        canvasContainer.addEventFilter(MouseEvent.MOUSE_ENTERED, e -> brushCursor.setVisible(true));
-        canvasContainer.addEventFilter(MouseEvent.MOUSE_EXITED, e -> brushCursor.setVisible(false));
+        canvasContainer.addEventFilter(MouseEvent.MOUSE_ENTERED, e -> {
+            if (textToggle.isSelected()) {
+                textCursor.setVisible(true);
+            } else {
+                brushCursor.setVisible(true);
+            }
+        });
+
+        canvasContainer.addEventFilter(MouseEvent.MOUSE_EXITED, e -> {
+            brushCursor.setVisible(false);
+            textCursor.setVisible(false);
+        });
 
         Platform.runLater(this::fitImageToScreen);
 
@@ -332,8 +351,22 @@ public class EditorController {
         double centerX = e.getX() - (canvasContainer.getWidth() / 2);
         double centerY = e.getY() - (canvasContainer.getHeight() / 2);
 
-        brushCursor.setTranslateX(centerX);
-        brushCursor.setTranslateY(centerY);
+        if (textToggle != null && textToggle.isSelected()) {
+            brushCursor.setVisible(false);
+            textCursor.setVisible(true);
+
+            textCursor.setTranslateX(centerX);
+            textCursor.setTranslateY(centerY);
+            textCursor.setText(textInputField.getText());
+            textCursor.setFont(Font.font(widthSlider.getValue() * 3));
+            textCursor.setFill(colorPicker.getValue());
+        } else {
+            textCursor.setVisible(false);
+            brushCursor.setVisible(true);
+
+            brushCursor.setTranslateX(centerX);
+            brushCursor.setTranslateY(centerY);
+        }
     }
 
     private void loadChallengeBackground() {
@@ -626,7 +659,7 @@ public class EditorController {
                 return;
             }
 
-            if (e.getButton() == MouseButton.PRIMARY && (brushToggle.isSelected() || eraserToggle.isSelected() || shapeToggle.isSelected() || gradientToggle.isSelected())) {
+            if (e.getButton() == MouseButton.PRIMARY && (brushToggle.isSelected() || eraserToggle.isSelected() || shapeToggle.isSelected() || gradientToggle.isSelected()||textToggle.isSelected())) {
                 currentPaintCommand = new Paint(currentCanvas, 0, 0, currentCanvas.getWidth(), currentCanvas.getHeight());
 
                 double size = widthSlider.getValue();
@@ -636,7 +669,7 @@ public class EditorController {
 
                 if (eraserToggle != null && eraserToggle.isSelected()) {
                     gc.clearRect(lastX - size / 2, lastY - size / 2, size, size);
-                } else if (shapeToggle != null && shapeToggle.isSelected() || (gradientToggle != null && gradientToggle.isSelected())){
+                } else if (shapeToggle != null && shapeToggle.isSelected() || (gradientToggle != null && gradientToggle.isSelected())) {
                     shapeStartX = lastX;
                     shapeStartY = lastY;
 
@@ -644,6 +677,18 @@ public class EditorController {
                     params.setFill(Color.TRANSPARENT);
                     preShapeSnapshot = currentCanvas.snapshot(params, null);
 
+                } else if (textToggle != null && textToggle.isSelected()) {
+                    String textToDraw = textInputField.getText();
+                    if (textToDraw != null && !textToDraw.isEmpty()) {
+                        gc.setFill(colorPicker.getValue());
+
+                        gc.setFont(Font.font(size * 3));
+
+                        gc.setTextAlign(TextAlignment.CENTER);
+                        gc.setTextBaseline(VPos.CENTER);
+
+                        gc.fillText(textToDraw, lastX, lastY);
+                    }
                 } else {
 
                     gc.setStroke(colorPicker.getValue());
@@ -679,6 +724,7 @@ public class EditorController {
             }
 
             if (e.getButton() == MouseButton.PRIMARY && (brushToggle.isSelected() || eraserToggle.isSelected() || shapeToggle.isSelected() || gradientToggle.isSelected())) {
+
 
                 double size = widthSlider.getValue();
                 Point2D p = currentCanvas.sceneToLocal(e.getSceneX(), e.getSceneY());
@@ -1372,7 +1418,54 @@ private void setupWorkspaceDimensions(double width, double height) {
 
         addAccelerator(accelerators, keys.getBind(Actions.EMPTY_LAYER), () -> createLayer(false));
         addAccelerator(accelerators, keys.getBind(Actions.RESIZING), () -> handleResize(new ActionEvent()));
+        addAccelerator(accelerators, keys.getBind(Actions.DUPLICATE), () -> handleDuplicateLayer(new ActionEvent()));
 
+
+
+    }
+    @FXML
+    private void handleDuplicateLayer(ActionEvent actionEvent) {
+        SpriteLayer selectedLayer = layerListView.getSelectionModel().getSelectedItem();
+        int selectedIndex = layerListView.getSelectionModel().getSelectedIndex();
+        if (selectedLayer == null) return;
+
+        String newName = selectedLayer.getName() + " Copy";
+        SpriteLayer duplicateLayer = new SpriteLayer(newName, currentProject.getWidth(), currentProject.getHeight());
+
+        Canvas duplicateCanvas = new Canvas(currentProject.getWidth(), currentProject.getHeight());
+        duplicateCanvas.setId(newName);
+
+        Canvas sourceCanvas = getCanvasForLayer(selectedLayer.getName());
+
+        if (sourceCanvas != null) {
+
+            boolean ogVisible = sourceCanvas.isVisible();
+            double ogOpacity = sourceCanvas.getOpacity();
+
+            sourceCanvas.setVisible(true);
+            sourceCanvas.setOpacity(1.0);
+
+            SnapshotParameters params = new SnapshotParameters();
+            params.setFill(Color.TRANSPARENT);
+            WritableImage snapshot = sourceCanvas.snapshot(params, null);
+
+            sourceCanvas.setVisible(ogVisible);
+            sourceCanvas.setOpacity(ogOpacity);
+
+            duplicateCanvas.getGraphicsContext2D().drawImage(snapshot, 0, 0);
+            duplicateLayer.setImage(snapshot);
+        }
+
+        duplicateLayer.setVisible(selectedLayer.isVisible());
+        duplicateLayer.setOpacity(selectedLayer.getOpacity());
+        duplicateCanvas.setVisible(selectedLayer.isVisible());
+        duplicateCanvas.setOpacity(selectedLayer.getOpacity());
+
+        layerListModel.add(selectedIndex, duplicateLayer);
+        canvasContainer.getChildren().add(duplicateCanvas);
+
+        syncCanvasOrder();
+        layerListView.getSelectionModel().select(duplicateLayer);
 
     }
 

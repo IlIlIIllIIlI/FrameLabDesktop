@@ -12,6 +12,7 @@ public enum Actions {
     TOOL_BRUSH,
     TOOL_ERASER,
     RESIZING,
+    DUPLICATE,
     HORIZONTAL_FLIP,
     VERTICAL_FLIP,
     GRABBING,

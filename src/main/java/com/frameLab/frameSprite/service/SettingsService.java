@@ -34,6 +34,7 @@ public class SettingsService {
         defaultBinds.put(Actions.REDO, new KeyCodeCombination(KeyCode.Z,KeyCombination.CONTROL_DOWN,KeyCombination.SHIFT_DOWN));
         defaultBinds.put(Actions.TOOL_BRUSH, new KeyCodeCombination(KeyCode.B));
         defaultBinds.put(Actions.EMPTY_LAYER, new KeyCodeCombination(KeyCode.L,KeyCombination.CONTROL_DOWN));
+        defaultBinds.put(Actions.DUPLICATE, new KeyCodeCombination(KeyCode.D,KeyCombination.CONTROL_DOWN));
 
         currentTheme = new NordDark().getUserAgentStylesheet();
         loadUserPreferences();

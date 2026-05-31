@@ -12,6 +12,7 @@
 <?import javafx.scene.effect.DropShadow?>
 <?import javafx.collections.FXCollections?>
 <?import java.lang.String?>
+<?import javafx.scene.text.Text?>
 <BorderPane xmlns="http://javafx.com/javafx"
             xmlns:fx="http://javafx.com/fxml"
             fx:controller="com.frameLab.frameSprite.controller.EditorController"
@@ -200,6 +201,7 @@
                     </tooltip>
                 </ToggleButton>
 
+
                 <Label styleClass="editor-label">
                     <graphic>
                         <FontIcon iconLiteral="mdi2r-radius-outline" iconSize="18" />
@@ -215,6 +217,20 @@
                 </Slider>
 
                 <Separator styleClass="editor-separator" />
+
+                <ToggleButton fx:id="textToggle" styleClass="editor-toggle">
+                    <graphic>
+                        <FontIcon iconLiteral="mdi2f-format-text" iconSize="18" />
+                    </graphic>
+                    <tooltip>
+                        <Tooltip text="Text Stamp Tool" />
+                    </tooltip>
+                </ToggleButton>
+
+                <Separator styleClass="editor-separator" />
+
+
+                <TextField fx:id="textInputField" promptText="Enter text..." prefWidth="130" />
 
                 <MenuButton styleClass="editor-menu">
                     <graphic>
@@ -279,6 +295,11 @@
                                     </effect>
                                 </Circle>
 
+                                <Text fx:id="textCursor" visible="false" mouseTransparent="true">
+                                    <effect>
+                                        <DropShadow color="WHITE" radius="2.0" spread="0.5" />
+                                    </effect>
+                                </Text>
                             </StackPane>
 
                         </StackPane>
@@ -319,6 +340,15 @@
                     </graphic>
                     <tooltip>
                         <Tooltip text="Delete Selected Layer" />
+                    </tooltip>
+                </Button>
+
+                <Button styleClass="editor-button" onAction="#handleDuplicateLayer">
+                    <graphic>
+                        <FontIcon iconLiteral="mdi2c-content-duplicate" iconSize="16" />
+                    </graphic>
+                    <tooltip>
+                        <Tooltip text="Duplicate Layer" />
                     </tooltip>
                 </Button>
 
