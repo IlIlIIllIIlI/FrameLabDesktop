@@ -329,6 +329,8 @@ public class EditorController {
 
         }
         projectsService.saveProject(currentProject);
+        currentProject.setId(currentProject.getId());
+
     }
 
     @FXML
