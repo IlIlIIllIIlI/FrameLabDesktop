@@ -6,6 +6,7 @@ import com.frameLab.frameSprite.model.User;
 import com.frameLab.frameSprite.utils.SessionUtils;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 public class ProjectsService {
@@ -48,10 +49,13 @@ public class ProjectsService {
 
     public void saveProject(Project project) throws IOException {
         if (project.getId() == 0) {
+            User currentUser = SessionUtils.getInstance().getUser();
             project.setUserId(SessionUtils.getInstance().getUser().getId());
             project.setChallengeId(SessionUtils.getInstance().getChallenge().getId());
-            SessionUtils.getInstance().getUser().getProjects().add(project);
-
+            if (currentUser.getProjects() == null) {
+                currentUser.setProjects(new ArrayList<>());
+            }
+            currentUser.getProjects().add(project);
         }
 
         dao.save(project);
