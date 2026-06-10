@@ -274,6 +274,8 @@
                 </Label>
 
                 <Slider fx:id="rotateSlider" styleClass="editor-slider" max="360" prefWidth="80" />
+
+                <Spinner fx:id="rotateField" prefWidth="80"  min="0" max="360" editable="true" />
             </ToolBar>
         </VBox>
     </top>

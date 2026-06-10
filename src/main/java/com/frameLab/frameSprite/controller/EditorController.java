@@ -20,7 +20,12 @@ import com.frameLab.frameSprite.service.*;
 import com.frameLab.frameSprite.utils.Actions;
 import com.frameLab.frameSprite.utils.ApiUtils;
 import com.frameLab.frameSprite.utils.SessionUtils;
+import com.sun.javafx.scene.control.DoubleField;
+import com.sun.javafx.scene.control.InputField;
+import com.sun.javafx.scene.control.IntegerField;
 import javafx.application.Platform;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.concurrent.Task;
@@ -60,6 +65,8 @@ import java.util.*;
 
 public class EditorController {
     private static final Logger log = LoggerFactory.getLogger(EditorController.class);
+    @FXML
+    private Spinner<Integer> rotateField;
     @FXML
     private Text textCursor;
     @FXML
@@ -166,6 +173,12 @@ public class EditorController {
             }
         });
 
+        rotateField.valueProperty().addListener((obs, old, next) -> {
+            if (currentCanvas != null)  {
+                this.handleApplyRotate(next);
+            }
+        });
+
 
         Platform.runLater(() -> setupManualTooltips(editorRoot));
 
@@ -261,7 +274,7 @@ public class EditorController {
                 if (scrollPane.getStyleClass().contains("hidden-scrollbars")) {
                     // event.consume(); temp removal to test feelings
                 }
-                }
+            }
         });
 
         scrollPane.viewportBoundsProperty().addListener((obs, oldBounds, newBounds) -> {
@@ -1064,7 +1077,6 @@ public class EditorController {
         historyService.addCommand(command);
     }
 
-
     @FXML
     private void handleApplyContrast(ActionEvent actionEvent) {
         openFilterDialog(new ContrastFilter());
@@ -1136,7 +1148,6 @@ public class EditorController {
         );
 
         canvasContainer.setBackground(new Background(new BackgroundFill(checkerboard, null, null)));
-
 
     }
 

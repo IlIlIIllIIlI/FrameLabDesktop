@@ -35,6 +35,10 @@ public class ProjectsService {
             }
             return  projects;
         }
+        for (Project project : userCache.getProjects()){
+            project.setImageUrl(storageService.getPreviewPath(project.getId()));
+        }
+
 
         return userCache.getProjects();
     }
@@ -44,14 +48,17 @@ public class ProjectsService {
     }
 
     public void saveProject(Project project) throws IOException {
+
         if (project.getId() == 0) {
             project.setUserId(SessionUtils.getInstance().getUser().getId());
             project.setChallengeId(SessionUtils.getInstance().getChallenge().getId());
+            SessionUtils.getInstance().getUser().getProjects().add(project);
+
         }
 
         dao.save(project);
-
         storageService.saveFiles(project);
+
     }
 
     public void deleteProject(Project project) throws IOException {
